@@ -217,6 +217,19 @@ settings['statusLine'] = {
     'type': 'command',
     'command': f'bash {os.environ[\"HOME\"]}/.claude/statusline-command.sh'
 }
+settings['hooks'] = {
+    'PreToolUse': [
+        {
+            'matcher': 'Bash',
+            'hooks': [
+                {
+                    'type': 'command',
+                    'command': f'bash {os.environ[\"HOME\"]}/.claude/hooks/node-context.sh'
+                }
+            ]
+        }
+    ]
+}
 with open(os.environ['SETTINGS_OUT'], 'w') as f:
     json.dump(settings, f, indent=2)
     f.write('\n')
@@ -352,6 +365,11 @@ for module in "${MODULE_LIST[@]}"; do
     esac
 done
 
+# Symlink shared hooks directory
+if [[ -d "$SCRIPT_DIR/shared/hooks" ]]; then
+    create_symlink "$SCRIPT_DIR/shared/hooks" "$CLAUDE_DIR/hooks"
+fi
+
 # Symlink shared skills directory contents
 if [[ -d "$SCRIPT_DIR/shared/skills" ]]; then
     for skill_dir in "$SCRIPT_DIR/shared/skills"/*/; do
@@ -393,6 +411,9 @@ echo "    ~/.claude/settings.json        -> build/settings.json"
 echo "    ~/.claude/statusline-command.sh -> shared/statusline-command.sh"
 if [[ -d "$BUILD_DIR/skills/slurm-status" ]]; then
     echo "    ~/.claude/skills/slurm-status  -> build/skills/slurm-status"
+fi
+if [[ -d "$SCRIPT_DIR/shared/hooks" ]]; then
+    echo "    ~/.claude/hooks               -> shared/hooks"
 fi
 if [[ -d "$SCRIPT_DIR/shared/skills" ]]; then
     for skill_dir in "$SCRIPT_DIR/shared/skills"/*/; do

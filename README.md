@@ -39,6 +39,8 @@ Run `./uninstall.sh` — removes symlinks, strips the lab config block from CLAU
 │   ├── slurm-debug/           # Symlinked → shared/skills/slurm-debug/
 │   ├── slurm-job/             # Symlinked → shared/skills/slurm-job/
 │   └── slurm-status/          # Generated from module template → symlinked (cluster-specific)
+├── hooks/                     # Symlinked → shared/hooks/ (PreToolUse hooks)
+│   └── node-context.sh        # Detects login vs compute node, injects advisory context
 └── agents/
     ├── slurm-queue.md         # Symlinked → shared/agents/slurm-queue.md
     ├── slurm-resource.md      # Symlinked → shared/agents/slurm-resource.md
@@ -63,6 +65,16 @@ Run `./uninstall.sh` — removes symlinks, strips the lab config block from CLAU
 | `@slurm-queue` | Overview of your active, pending, and recent jobs |
 | `@slurm-resource` | Reference card of available accounts, partitions, and GPUs |
 | `@slurm-storage` | Scan home directory usage and suggest cleanup |
+
+## Hooks
+
+The configuration includes a `PreToolUse` hook that runs before every Bash command to detect whether Claude is running on a login node or a compute node:
+
+- **Compute node** (Slurm job detected): injects job ID, GPU count, memory, and partition — confirms that heavy operations are safe
+- **Login node** (hostname matches `gl-login`, `lh-login`): warns Claude not to run CPU/GPU/memory-intensive work and suggests `srun`/`sbatch`
+- **Unknown host**: outputs no context (graceful degradation)
+
+The hook never blocks commands — it only adds advisory context so Claude makes better decisions about where to run heavy workloads.
 
 ## Contributing
 
