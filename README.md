@@ -4,8 +4,8 @@ Shared Claude Code setup for the lab. Provides consistent CLAUDE.md instructions
 
 ## Quick Start
 
-1. Install [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and run `claude` once to initialize `~/.claude/`
-2. Clone this repo and run `/onboard` in Claude Code:
+1. Install [Claude Code](https://docs.anthropic.com/en/docs/claude-code), run `claude`, and log in (`/login`)
+2. Clone this repo and bootstrap the onboard skill:
 
 ```bash
 git clone https://github.com/umich-foreseer/lab-claude-config.git ~/lab-claude-config
