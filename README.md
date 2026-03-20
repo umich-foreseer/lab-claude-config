@@ -9,10 +9,10 @@ Shared Claude Code setup for the lab. Provides consistent CLAUDE.md instructions
 
 ```bash
 git clone https://github.com/umich-foreseer/lab-claude-config.git ~/lab-claude-config
-claude
+mkdir -p ~/.claude/skills && ln -sf ~/lab-claude-config/shared/skills/onboard ~/.claude/skills/onboard
 ```
 
-Then type `/onboard` — it will detect your cluster, look up your Slurm accounts, run setup, and help customize your config.
+Then open Claude Code and type `/onboard` — it will detect your cluster, look up your Slurm accounts, run setup, and help customize your config.
 
 ## Updating
 
