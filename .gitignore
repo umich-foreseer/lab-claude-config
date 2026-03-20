@@ -1,0 +1,4 @@
+build/
+*.local.json
+.env.local
+.credentials.json

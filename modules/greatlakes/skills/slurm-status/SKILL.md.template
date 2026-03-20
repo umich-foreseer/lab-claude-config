@@ -1,0 +1,81 @@
+---
+name: slurm-status
+description: Show current GPU and resource usage on Great Lakes, who is using shared partitions (especially L40S), and what resources the user can request right now.
+allowed-tools: Bash(sinfo *), Bash(squeue *), Bash(sacctmgr *)
+---
+
+# Great Lakes Slurm Resource Status Report
+
+Run the following commands and synthesize a clear, concise status report for the user.
+
+## User context
+
+- Username: `{{GL_USERNAME}}`
+- Primary GPU account: `{{GL_ACCOUNT_OWNED}}` (for **spgpu2** / L40S partition, QOS: `arph`)
+- General account: `{{GL_ACCOUNT_GENERAL}}` (for gpu, spgpu, gpu_mig40, standard, debug, largemem partitions, QOS: normal/interactive)
+- Account-level memory cap on {{GL_ACCOUNT_OWNED}}: **{{GL_MEMORY_CAP}} GB shared** across all group members
+
+## Steps
+
+### 1. GPU partition overview
+
+Run:
+```bash
+sinfo -p spgpu2,spgpu,gpu,gpu_mig40,gpu-rtx6000 -o "%12P %16G %5D %8T %10C %12m" 2>&1
+```
+
+Summarize: partition, GPU type, total nodes, node states, total vs available CPUs.
+
+### 2. L40S (spgpu2) detailed usage
+
+Run:
+```bash
+sinfo -p spgpu2 -N -o "%12N %16G %20C %10e %5T" 2>&1
+```
+
+This shows per-node GPU allocation, CPU usage (Allocated/Idle/Other/Total), free memory, and state. Summarize how many GPUs and how much memory are free across the partition.
+
+### 3. Who is using L40S GPUs right now
+
+Run:
+```bash
+squeue -p spgpu2 -t R -o "%.10i %.12u %.16a %.2t %.12M %.4C %8m %b %R" 2>&1
+```
+
+Summarize by user and account: how many GPUs each user/group is consuming. Highlight the user's own group (`{{GL_ACCOUNT_OWNED}}`).
+
+### 4. Pending jobs on L40S
+
+Run:
+```bash
+squeue -p spgpu2 -t PD -o "%.10i %.12u %.16a %.20r %b" 2>&1 | head -30
+```
+
+Summarize: how many jobs pending, by whom, and why (reason codes).
+
+### 5. User's current jobs (all partitions)
+
+Run:
+```bash
+squeue -u {{GL_USERNAME}} -o "%.10i %.12P %.20j %.2t %.12M %.4C %8m %b %R" 2>&1
+```
+
+### 6. Group memory budget check
+
+Run:
+```bash
+squeue -A {{GL_ACCOUNT_OWNED}} -t R -o "%.10i %.12u %.8m %.4C %b" 2>&1
+```
+
+Sum up the memory being used by all running jobs under `{{GL_ACCOUNT_OWNED}}`. Calculate remaining memory out of {{GL_MEMORY_CAP}} GB.
+
+### 7. What can you request right now?
+
+Based on the above data, report:
+- **Available L40S GPUs** (total free across all nodes)
+- **Remaining group memory budget** ({{GL_MEMORY_CAP}}G minus what's currently used)
+- **Estimated max GPUs requestable** given memory constraints (each L40S node has ~495 GB RAM, estimate ~60 GB per GPU as a reasonable default)
+- Any other partitions with free GPUs the user can access
+- Note any heavy pending job queues that might compete for resources
+
+Present the final report as a clean markdown summary with sections.

@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(python *)",
+      "Bash(pip *)",
+      "Bash(conda *)",
+      "Bash(sinfo *)",
+      "Bash(squeue *)",
+      "Bash(sacctmgr *)",
+      "Bash(sbatch *)",
+      "Bash(srun *)",
+      "Bash(scancel *)"
+    ]
+  }
+}
