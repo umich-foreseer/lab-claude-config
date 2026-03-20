@@ -68,13 +68,16 @@ Run `./uninstall.sh` — removes symlinks, strips the lab config block from CLAU
 
 ## Hooks
 
-The configuration includes a `PreToolUse` hook that runs before every Bash command to detect whether Claude is running on a login node or a compute node:
+**Hooks** run automatically before or after tool calls — no user action needed. They never block commands; they only inject advisory context.
 
-- **Compute node** (Slurm job detected): injects job ID, GPU count, memory, and partition — confirms that heavy operations are safe
-- **Login node** (hostname matches `gl-login`, `lh-login`): warns Claude not to run CPU/GPU/memory-intensive work and suggests `srun`/`sbatch`
-- **Unknown host**: outputs no context (graceful degradation)
+| Hook | Trigger | Description |
+|------|---------|-------------|
+| `node-context` | `PreToolUse` → `Bash` | Detects login vs compute node and injects context so Claude avoids heavy ops on login nodes |
 
-The hook never blocks commands — it only adds advisory context so Claude makes better decisions about where to run heavy workloads.
+**Node context details:**
+- **Compute node** (Slurm job detected): reports job ID, GPU count, memory, and partition — confirms heavy ops are safe
+- **Login node** (hostname matches `gl-login`, `lh-login`): warns against heavy operations, suggests `srun`/`sbatch`
+- **Unknown host**: no context added (graceful degradation)
 
 ## Contributing
 
