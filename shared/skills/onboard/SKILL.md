@@ -56,10 +56,20 @@ Then, look up the group memory cap for the owned account separately:
 sacctmgr show association account=<owned_account> format=account%20,grptres%40 --noheader 2>/dev/null | head -5
 ```
 
-From the output, identify:
-- **Owned account**: the account with `arph` QOS (usually `*_project_owned1`) — this is for L40S GPUs
-- **General account**: the account with `normal`/`interactive` QOS (usually `qmei0` or similar) — this is for other GPU types
-- **Lighthouse account**: the account with access to GPU partitions on Lighthouse
+Use this reference table to match `sacctmgr` output to the correct account-partition-GPU mapping. Do NOT ask the user to identify accounts — match them yourself:
+
+| Account | Cluster | Partition(s) | GPUs | Billing |
+|---|---|---|---|---|
+| `qdj_project_owned1` | Great Lakes | spgpu2 | Up to 10 L40S (48G) | Prepaid (shared dynamic quota) |
+| `qmei0` | Great Lakes | gpu, gpu-rtx6000, standard | V100, RTX Pro 6000 Blackwell | Prepaid (shared dynamic quota) |
+| `qmei3` | Great Lakes | gpu, gpu-rtx6000, standard | V100, RTX Pro 6000 Blackwell | Pay-as-you-go |
+| `qmei` | Lighthouse | qmei-a100 | 4x A100 (80G) | Dedicated |
+
+From the `sacctmgr` output and the table above, identify:
+- **Owned account**: the account with `arph` QOS (`qdj_project_owned1`) — for L40S GPUs on spgpu2
+- **General account (prepaid)**: `qmei0` — for V100/RTX Pro 6000 Blackwell on gpu/gpu-rtx6000/standard
+- **General account (pay-as-you-go)**: `qmei3` — same partitions, used when prepaid budget is exhausted
+- **Lighthouse account**: `qmei` — for A100 GPUs on qmei-a100 partition
 - **Memory cap**: check the `grptres` column for `mem=...G`, or default to 620 GB
 
 ### 4. Present findings and confirm
@@ -78,7 +88,7 @@ Show the user what you found in a clear, beginner-friendly summary. Avoid jargon
 >
 > Does this look right?
 
-Only ask the user to fill in values you genuinely couldn't determine from `sacctmgr`. For Lighthouse GPU count and type, default to 4 and A100 80GB respectively — confirm with the user if they want different values.
+Use the reference table above to auto-fill account, partition, and GPU values. Only ask the user if their `sacctmgr` output contains accounts not listed in the reference table.
 
 ## Run setup
 
