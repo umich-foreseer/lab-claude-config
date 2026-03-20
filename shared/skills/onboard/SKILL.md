@@ -56,46 +56,77 @@ Then, look up the group memory cap for the owned account separately:
 sacctmgr show association account=<owned_account> format=account%20,grptres%40 --noheader 2>/dev/null | head -5
 ```
 
-From the output, identify:
-- **Owned account**: the account with `arph` QOS (usually `*_project_owned1`) — this is for L40S GPUs
-- **General account**: the account with `normal`/`interactive` QOS (usually `qmei0` or similar) — this is for other GPU types
-- **Lighthouse account**: the account with access to GPU partitions on Lighthouse
+Use this reference table to match `sacctmgr` output to the correct account-partition-GPU mapping. **Each account belongs to a specific cluster. Only present accounts for the current cluster (detected in step 2). Ignore accounts for other clusters.**
+
+| Account | Cluster | Partition(s) | GPUs | Billing |
+|---|---|---|---|---|
+| `qdj_project_owned1` | Great Lakes | spgpu2 | Up to 10 L40S (48G) | Prepaid (shared dynamic quota) |
+| `qmei0` | Great Lakes | gpu, gpu-rtx6000, standard | V100, RTX Pro 6000 Blackwell | Prepaid (shared dynamic quota) |
+| `qmei3` | Great Lakes | gpu, gpu-rtx6000, standard | V100, RTX Pro 6000 Blackwell | Pay-as-you-go |
+| `qmei` | Lighthouse | qmei-a100 | 4x A100 (80G) | Dedicated |
+
+From the `sacctmgr` output, filter to only accounts for the **current cluster** using the table above, then identify:
+
+**On Great Lakes:**
+- **Owned account**: `qdj_project_owned1` (has `arph` QOS) — for L40S GPUs on spgpu2
+- **General account (prepaid)**: `qmei0` — for V100/RTX Pro 6000 Blackwell on gpu/gpu-rtx6000/standard
+- **General account (pay-as-you-go)**: `qmei3` — same partitions, used when prepaid budget is exhausted
 - **Memory cap**: check the `grptres` column for `mem=...G`, or default to 620 GB
+
+**On Lighthouse:**
+- **Lighthouse account**: `qmei` — for A100 GPUs on qmei-a100 partition
 
 ### 4. Present findings and confirm
 
-Show the user what you found in a clear, beginner-friendly summary. Avoid jargon where possible and briefly explain what each item means. For example:
+**Only present accounts and partitions for the current cluster** (detected in step 2). Do not mention accounts or partitions on other clusters — the user is onboarding to the cluster they are logged into now.
 
-> Here's what I detected for your cluster setup:
+Show the user what you found in a clear, beginner-friendly summary. Avoid jargon where possible and briefly explain what each item means.
+
+Example for a user on **Lighthouse**:
+
+> Here's what I detected for your Lighthouse setup:
 >
 > - **Username**: `jsmith`
-> - **Cluster**: Great Lakes (University of Michigan HPC)
-> - **L40S account**: `qdj_project_owned1` — use this when requesting our lab's dedicated L40S GPUs (the fastest GPUs we have access to, 48 GB VRAM each)
-> - **General account**: `qmei0` — use this for other GPU types (A40, V100, etc.) and CPU-only jobs
-> - **Group memory cap**: 620 GB — this is the total memory our entire lab group can use on L40S nodes at the same time, so be mindful of large requests
->
-> After setup, your CLAUDE.md will contain a full table of available GPU partitions and example job submission commands. You can also run `/slurm-status` anytime to check real-time GPU availability.
+> - **Lighthouse account**: `qmei` — 4x A100 GPUs (80 GB VRAM each) on the dedicated `qmei-a100` partition
 >
 > Does this look right?
 
-Only ask the user to fill in values you genuinely couldn't determine from `sacctmgr`. For Lighthouse GPU count and type, default to 4 and A100 80GB respectively — confirm with the user if they want different values.
+Example for a user on **Great Lakes**:
+
+> Here's what I detected for your Great Lakes setup:
+>
+> - **Username**: `jsmith`
+> - **L40S account**: `qdj_project_owned1` — our lab's dedicated L40S GPUs (48 GB VRAM each) on `spgpu2`
+> - **General account**: `qmei0` — for V100 / RTX Pro 6000 Blackwell on `gpu`, `gpu-rtx6000`, `standard`
+> - **Group memory cap**: 620 GB — total memory our lab can use simultaneously on L40S nodes
+>
+> Does this look right?
+
+Use the reference table above to auto-fill account, partition, and GPU values. Only ask the user if their `sacctmgr` output contains accounts not listed in the reference table.
 
 ## Run setup
 
-Once you have all values, write them to `~/lab-claude-config/build/.env.local` in this format:
+Once you have all values, write them to `~/lab-claude-config/build/.env.local`. **Only include variables for the detected cluster** (the one the user is currently on):
+
+For **Lighthouse**:
 ```
 # Lab Claude Config - saved template variables
-GL_USERNAME=<value>
-GL_ACCOUNT_OWNED=<value>
-GL_ACCOUNT_GENERAL=<value>
-GL_MEMORY_CAP=<value>
 LH_USERNAME=<value>
 LH_ACCOUNT=<value>
 LH_GPU_COUNT=<value>
 LH_GPU_TYPE=<value>
 ```
 
-Only include variables for enabled modules. Then run:
+For **Great Lakes**:
+```
+# Lab Claude Config - saved template variables
+GL_USERNAME=<value>
+GL_ACCOUNT_OWNED=<value>
+GL_ACCOUNT_GENERAL=<value>
+GL_MEMORY_CAP=<value>
+```
+
+Then run:
 ```bash
 cd ~/lab-claude-config && ./setup.sh --modules <modules> --non-interactive
 ```
