@@ -111,7 +111,20 @@ Scale memory and CPUs proportionally for multi-GPU jobs (e.g., 2 L40S → `--mem
 
 6. **No home directory output**: If the job writes large outputs (checkpoints, datasets, results), direct them to turbo storage, not `~/`.
 
-7. **Multi-node / distributed**: If the user requests multiple nodes, add `--nodes`, `--ntasks-per-node`, and include `torchrun` or `srun` launcher setup as appropriate. Ask the user which distributed framework they use if unclear.
+7. **Scratch for I/O-heavy jobs**: If the job reads many small files or does heavy random I/O (e.g., training on large image datasets), stage data to scratch (`/scratch/<account>/<project>/<user>/`) at job start for better performance, and copy results back to turbo at job end. Include cleanup. Example pattern:
+
+   ```bash
+   SCRATCH_DIR=/scratch/${SLURM_ACCOUNT}/${USER}/${SLURM_JOB_ID}
+   mkdir -p "$SCRATCH_DIR"
+   cp -r /nfs/turbo/<volume>/data "$SCRATCH_DIR/"
+   # ... run job from $SCRATCH_DIR ...
+   cp -r "$SCRATCH_DIR/output" /nfs/turbo/<volume>/results/
+   rm -rf "$SCRATCH_DIR"
+   ```
+
+   Remind the user that scratch is auto-purged after 60 days of inactivity — never use it as permanent storage.
+
+8. **Multi-node / distributed**: If the user requests multiple nodes, add `--nodes`, `--ntasks-per-node`, and include `torchrun` or `srun` launcher setup as appropriate. Ask the user which distributed framework they use if unclear.
 
 ### 4. Present the script
 

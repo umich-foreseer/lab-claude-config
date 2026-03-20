@@ -34,6 +34,16 @@ sbatch --partition=gpu --account=<your-general-account> --gres=gpu:1 --mem=20G j
 srun --partition=spgpu2 --account=<your-owned-account> --gres=gpu:1 --mem=60G --time=2:00:00 --pty bash
 ```
 
+## Storage Paths
+
+| Storage | Path | Quota | Purge |
+|---|---|---|---|
+| Home | `~/` | ~80 GiB | None |
+| Turbo | `/nfs/turbo/<volume>/<user>/` | Lab-purchased, no strict limit | None |
+| Scratch | `/scratch/<account>/<project>/<user>/` | 10 TB / 1M inodes per account | **60 days** untouched |
+
+Use turbo for persistent large files. Use scratch for temporary high-performance I/O during jobs (stage in from turbo, copy results back).
+
 ## Key Constraints
 
 - L40S memory budget is shared across the entire owned account group (~11 members)
