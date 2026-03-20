@@ -109,6 +109,11 @@ for agent_file in "$CLAUDE_DIR/agents"/*.md; do
     fi
 done
 
+# Remove hooks symlink
+if [[ -L "$CLAUDE_DIR/hooks" ]]; then
+    remove_repo_symlink "$CLAUDE_DIR/hooks" || true
+fi
+
 echo ""
 echo -e "${GREEN}Uninstall complete.${NC}"
 echo ""
