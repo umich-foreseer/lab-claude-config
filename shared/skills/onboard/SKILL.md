@@ -56,7 +56,7 @@ Then, look up the group memory cap for the owned account separately:
 sacctmgr show association account=<owned_account> format=account%20,grptres%40 --noheader 2>/dev/null | head -5
 ```
 
-Use this reference table to match `sacctmgr` output to the correct account-partition-GPU mapping. Do NOT ask the user to identify accounts — match them yourself:
+Use this reference table to match `sacctmgr` output to the correct account-partition-GPU mapping. **Each account belongs to a specific cluster. Only present accounts for the current cluster (detected in step 2). Ignore accounts for other clusters.**
 
 | Account | Cluster | Partition(s) | GPUs | Billing |
 |---|---|---|---|---|
@@ -65,12 +65,16 @@ Use this reference table to match `sacctmgr` output to the correct account-parti
 | `qmei3` | Great Lakes | gpu, gpu-rtx6000, standard | V100, RTX Pro 6000 Blackwell | Pay-as-you-go |
 | `qmei` | Lighthouse | qmei-a100 | 4x A100 (80G) | Dedicated |
 
-From the `sacctmgr` output and the table above, identify:
-- **Owned account**: the account with `arph` QOS (`qdj_project_owned1`) — for L40S GPUs on spgpu2
+From the `sacctmgr` output, filter to only accounts for the **current cluster** using the table above, then identify:
+
+**On Great Lakes:**
+- **Owned account**: `qdj_project_owned1` (has `arph` QOS) — for L40S GPUs on spgpu2
 - **General account (prepaid)**: `qmei0` — for V100/RTX Pro 6000 Blackwell on gpu/gpu-rtx6000/standard
 - **General account (pay-as-you-go)**: `qmei3` — same partitions, used when prepaid budget is exhausted
-- **Lighthouse account**: `qmei` — for A100 GPUs on qmei-a100 partition
 - **Memory cap**: check the `grptres` column for `mem=...G`, or default to 620 GB
+
+**On Lighthouse:**
+- **Lighthouse account**: `qmei` — for A100 GPUs on qmei-a100 partition
 
 ### 4. Present findings and confirm
 
