@@ -25,7 +25,7 @@ remove_repo_symlink() {
     if [[ -L "$target" ]]; then
         local link_dest
         link_dest="$(readlink -f "$target")"
-        if [[ "$link_dest" == "$SCRIPT_DIR"* ]]; then
+        if [[ "$link_dest" == "$SCRIPT_DIR/"* ]]; then
             rm "$target"
             ok "Removed symlink: $target"
             return 0
@@ -99,6 +99,13 @@ fi
 for skill_dir in "$CLAUDE_DIR/skills"/*/; do
     if [[ -L "${skill_dir%/}" ]]; then
         remove_repo_symlink "${skill_dir%/}" || true
+    fi
+done
+
+# Remove agent symlinks
+for agent_file in "$CLAUDE_DIR/agents"/*.md; do
+    if [[ -L "$agent_file" ]]; then
+        remove_repo_symlink "$agent_file" || true
     fi
 done
 

@@ -58,7 +58,7 @@ if [[ -z "$MODULES" ]]; then
     MODULES=""
 
     # Great Lakes: check hostname pattern or sinfo for spgpu2
-    if hostname -f 2>/dev/null | grep -qi "greatlakes\|gl-login\|umich" ||
+    if hostname -f 2>/dev/null | grep -qi "greatlakes\|gl-login" ||
        sinfo -p spgpu2 --noheader 2>/dev/null | grep -q "spgpu2"; then
         MODULES="greatlakes"
         info "Detected Great Lakes cluster"
@@ -85,6 +85,16 @@ fi
 IFS=',' read -ra MODULE_LIST <<< "$MODULES"
 
 info "Modules to enable: ${MODULE_LIST[*]}"
+
+# --- Check dependencies ---
+if ! command -v python3 &>/dev/null; then
+    err "python3 is required but not found. Load it with 'module load python' or install it."
+    exit 1
+fi
+if ! command -v jq &>/dev/null; then
+    err "jq is required (for the statusline) but not found. Load it with 'module load jq' or install it."
+    exit 1
+fi
 
 # --- Ensure ~/.claude exists ---
 if [[ ! -d "$CLAUDE_DIR" ]]; then
@@ -197,15 +207,17 @@ backup_if_exists "$CLAUDE_DIR/statusline-command.sh"
 info "Generating settings.json..."
 
 # Read shared settings and inject statusline with expanded $HOME
+SETTINGS_IN="$SCRIPT_DIR/shared/settings.json" \
+SETTINGS_OUT="$BUILD_DIR/settings.json" \
 python3 -c "
 import json, os
-with open('$SCRIPT_DIR/shared/settings.json') as f:
+with open(os.environ['SETTINGS_IN']) as f:
     settings = json.load(f)
 settings['statusLine'] = {
     'type': 'command',
     'command': f'bash {os.environ[\"HOME\"]}/.claude/statusline-command.sh'
 }
-with open('$BUILD_DIR/settings.json', 'w') as f:
+with open(os.environ['SETTINGS_OUT'], 'w') as f:
     json.dump(settings, f, indent=2)
     f.write('\n')
 "
@@ -230,6 +242,11 @@ $(
     done
 )
 $END_MARKER"
+
+# Expand {{VAR}} placeholders in lab_block with saved template variables
+for key in "${!ENV_VARS[@]}"; do
+    lab_block="${lab_block//\{\{$key\}\}/${ENV_VARS[$key]}}"
+done
 
 if [[ ! -f "$CLAUDE_MD" ]]; then
     # No existing CLAUDE.md — create one with just the lab block
@@ -376,6 +393,14 @@ echo "    ~/.claude/settings.json        -> build/settings.json"
 echo "    ~/.claude/statusline-command.sh -> shared/statusline-command.sh"
 if [[ -d "$BUILD_DIR/skills/slurm-status" ]]; then
     echo "    ~/.claude/skills/slurm-status  -> build/skills/slurm-status"
+fi
+if [[ -d "$SCRIPT_DIR/shared/skills" ]]; then
+    for skill_dir in "$SCRIPT_DIR/shared/skills"/*/; do
+        if [[ -d "$skill_dir" ]]; then
+            skill_name="$(basename "$skill_dir")"
+            echo "    ~/.claude/skills/$skill_name -> shared/skills/$skill_name"
+        fi
+    done
 fi
 if [[ -d "$SCRIPT_DIR/shared/agents" ]]; then
     for agent_file in "$SCRIPT_DIR/shared/agents"/*.md; do

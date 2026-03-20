@@ -6,8 +6,8 @@ This is the University of Michigan Great Lakes cluster.
 
 | Account | Partitions | QOS | Limits |
 |---|---|---|---|
-| Primary GPU account | **spgpu2** (L40S) | arph | Shared group memory cap |
-| General account | gpu, spgpu, gpu_mig40, standard, debug, largemem | interactive, normal | No explicit GPU cap |
+| `{{GL_ACCOUNT_OWNED}}` (primary GPU) | **spgpu2** (L40S) | arph | Shared group memory cap: {{GL_MEMORY_CAP}} GB |
+| `{{GL_ACCOUNT_GENERAL}}` (general) | gpu, spgpu, gpu_mig40, standard, debug, largemem | interactive, normal | No explicit GPU cap |
 
 ## GPU Partitions Accessible
 
@@ -22,16 +22,16 @@ This is the University of Michigan Great Lakes cluster.
 
 ```bash
 # L40S (best GPU available)
-sbatch --partition=spgpu2 --account=<your-owned-account> --gres=gpu:1 --mem=60G job.sh
+sbatch --partition=spgpu2 --account={{GL_ACCOUNT_OWNED}} --gres=gpu:1 --mem=60G --time=8:00:00 job.sh
 
 # A40
-sbatch --partition=spgpu --account=<your-general-account> --gres=gpu:1 --mem=40G job.sh
+sbatch --partition=spgpu --account={{GL_ACCOUNT_GENERAL}} --gres=gpu:1 --mem=40G --time=8:00:00 job.sh
 
 # V100
-sbatch --partition=gpu --account=<your-general-account> --gres=gpu:1 --mem=20G job.sh
+sbatch --partition=gpu --account={{GL_ACCOUNT_GENERAL}} --gres=gpu:1 --mem=20G --time=8:00:00 job.sh
 
 # Interactive L40S session
-srun --partition=spgpu2 --account=<your-owned-account> --gres=gpu:1 --mem=60G --time=2:00:00 --pty bash
+srun --partition=spgpu2 --account={{GL_ACCOUNT_OWNED}} --gres=gpu:1 --mem=60G --time=2:00:00 --pty bash
 ```
 
 ## Storage Paths
@@ -46,6 +46,6 @@ Use turbo for persistent large files. Use scratch for temporary high-performance
 
 ## Key Constraints
 
-- L40S memory budget is shared across the entire owned account group (~11 members)
+- L40S memory budget ({{GL_MEMORY_CAP}} GB) is shared across the entire `{{GL_ACCOUNT_OWNED}}` group (~11 members)
 - Estimate ~60 GB memory per L40S GPU when planning requests
 - Use `/slurm-status` skill to check real-time availability before submitting large jobs

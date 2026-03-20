@@ -5,12 +5,16 @@
       "Bash(python *)",
       "Bash(pip *)",
       "Bash(conda *)",
+      "Bash(module *)",
       "Bash(sinfo *)",
       "Bash(squeue *)",
+      "Bash(sacct *)",
       "Bash(sacctmgr *)",
       "Bash(sbatch *)",
       "Bash(srun *)",
-      "Bash(scancel *)"
+      "Bash(salloc *)",
+      "Bash(scancel *)",
+      "Bash(nvidia-smi *)"
     ]
   }
 }
