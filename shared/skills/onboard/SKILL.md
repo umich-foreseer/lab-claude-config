@@ -14,7 +14,7 @@ You are helping a lab member set up the shared Claude Code configuration. Walk t
 
 2. Check if the lab config repo is already cloned at `~/lab-claude-config/`. If not found, tell the user to clone it first:
    ```
-   git clone <repo-url> ~/lab-claude-config
+   git clone https://github.com/umich-foreseer/lab-claude-config.git ~/lab-claude-config
    ```
    Then come back and run `/onboard` again.
 

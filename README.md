@@ -5,7 +5,7 @@ Shared Claude Code setup for the lab. Provides consistent CLAUDE.md instructions
 ## Quick Start
 
 ```bash
-git clone <repo-url> ~/lab-claude-config
+git clone https://github.com/umich-foreseer/lab-claude-config.git ~/lab-claude-config
 cd ~/lab-claude-config
 ```
 
