@@ -335,12 +335,22 @@ for module in "${MODULE_LIST[@]}"; do
     esac
 done
 
-# Symlink shared skills directory contents (future shared skills)
+# Symlink shared skills directory contents
 if [[ -d "$SCRIPT_DIR/shared/skills" ]]; then
     for skill_dir in "$SCRIPT_DIR/shared/skills"/*/; do
         if [[ -d "$skill_dir" ]]; then
             skill_name="$(basename "$skill_dir")"
             create_symlink "$skill_dir" "$CLAUDE_DIR/skills/$skill_name"
+        fi
+    done
+fi
+
+# Symlink shared agents
+if [[ -d "$SCRIPT_DIR/shared/agents" ]]; then
+    for agent_file in "$SCRIPT_DIR/shared/agents"/*.md; do
+        if [[ -f "$agent_file" ]]; then
+            agent_name="$(basename "$agent_file")"
+            create_symlink "$agent_file" "$CLAUDE_DIR/agents/$agent_name"
         fi
     done
 fi
@@ -366,6 +376,14 @@ echo "    ~/.claude/settings.json        -> build/settings.json"
 echo "    ~/.claude/statusline-command.sh -> shared/statusline-command.sh"
 if [[ -d "$BUILD_DIR/skills/slurm-status" ]]; then
     echo "    ~/.claude/skills/slurm-status  -> build/skills/slurm-status"
+fi
+if [[ -d "$SCRIPT_DIR/shared/agents" ]]; then
+    for agent_file in "$SCRIPT_DIR/shared/agents"/*.md; do
+        if [[ -f "$agent_file" ]]; then
+            agent_name="$(basename "$agent_file")"
+            echo "    ~/.claude/agents/$agent_name -> shared/agents/$agent_name"
+        fi
+    done
 fi
 echo ""
 echo "  CLAUDE.md: lab config injected between markers"

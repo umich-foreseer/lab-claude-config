@@ -6,7 +6,9 @@ allowed-tools: Bash(git *), Bash(hostname *), Bash(sinfo *), Bash(sacctmgr *), B
 
 # Lab Claude Code Setup — Onboarding
 
-You are helping a lab member set up the shared Claude Code configuration. Walk them through this interactively. Be friendly and concise.
+You are helping a new lab member set up the shared Claude Code configuration. Walk them through this interactively. Be friendly, welcoming, and concise.
+
+Start with a greeting like: **"Welcome onboard, Foreseer!"** followed by a brief explanation of what this setup does: it connects Claude Code to the lab's shared configuration so Claude understands the cluster environment, knows what GPUs are available, and can help submit jobs correctly.
 
 ## Pre-flight checks
 
@@ -44,26 +46,35 @@ sinfo -o "%12P %16G" --noheader 2>/dev/null | head -20
 
 ### 3. Look up Slurm accounts
 
+First, get account names and QOS:
 ```bash
-sacctmgr show association user=$(whoami) format=account%20,partition%20,qos%20,maxmem%15 --noheader 2>/dev/null
+sacctmgr show association user=$(whoami) format=account%20,partition%20,qos%40 --noheader 2>/dev/null
+```
+
+Then, look up the group memory cap for the owned account separately:
+```bash
+sacctmgr show association account=<owned_account> format=account%20,grptres%40 --noheader 2>/dev/null | head -5
 ```
 
 From the output, identify:
-- **Great Lakes owned account**: the account with access to `spgpu2` partition and `arph` QOS (usually `*_project_owned1`)
-- **Great Lakes general account**: the account with access to `gpu`, `spgpu`, etc. with `normal`/`interactive` QOS
+- **Owned account**: the account with `arph` QOS (usually `*_project_owned1`) — this is for L40S GPUs
+- **General account**: the account with `normal`/`interactive` QOS (usually `qmei0` or similar) — this is for other GPU types
 - **Lighthouse account**: the account with access to GPU partitions on Lighthouse
-- **Memory cap**: check the `maxmem` column for the owned account, or default to 620 GB
+- **Memory cap**: check the `grptres` column for `mem=...G`, or default to 620 GB
 
 ### 4. Present findings and confirm
 
-Show the user what you found in a clear summary, e.g.:
+Show the user what you found in a clear, beginner-friendly summary. Avoid jargon where possible and briefly explain what each item means. For example:
 
-> Here's what I detected:
+> Here's what I detected for your cluster setup:
+>
 > - **Username**: `jsmith`
-> - **Cluster**: Great Lakes
-> - **Owned account**: `qdj_project_owned1` (spgpu2/L40S, QOS: arph)
-> - **General account**: `qmei0` (gpu, spgpu, etc.)
-> - **Memory cap**: 620 GB
+> - **Cluster**: Great Lakes (University of Michigan HPC)
+> - **L40S account**: `qdj_project_owned1` — use this when requesting our lab's dedicated L40S GPUs (the fastest GPUs we have access to, 48 GB VRAM each)
+> - **General account**: `qmei0` — use this for other GPU types (A40, V100, etc.) and CPU-only jobs
+> - **Group memory cap**: 620 GB — this is the total memory our entire lab group can use on L40S nodes at the same time, so be mindful of large requests
+>
+> After setup, your CLAUDE.md will contain a full table of available GPU partitions and example job submission commands. You can also run `/slurm-status` anytime to check real-time GPU availability.
 >
 > Does this look right?
 

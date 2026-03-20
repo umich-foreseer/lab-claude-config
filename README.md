@@ -1,6 +1,6 @@
 # Lab Claude Code Configuration
 
-Shared Claude Code setup for the lab. Provides consistent CLAUDE.md instructions, statusline, settings, and Slurm skills across Great Lakes and Lighthouse clusters.
+Shared Claude Code setup for the lab. Provides consistent CLAUDE.md instructions, statusline, settings, skills, and agents across Great Lakes and Lighthouse clusters.
 
 ## Quick Start
 
@@ -35,7 +35,28 @@ Run `./uninstall.sh` — removes symlinks, strips the lab config block from CLAU
 | `~/.claude/CLAUDE.md` | shared + modules | Injected between markers (user owns file) |
 | `~/.claude/skills/slurm-status/` | Cluster skill template | Generated, symlinked (last module wins) |
 | `~/.claude/skills/onboard/` | `shared/skills/onboard/` | Symlinked directly |
+| `~/.claude/skills/slurm-*/` | `shared/skills/slurm-*/` | Symlinked directly |
+| `~/.claude/agents/*.md` | `shared/agents/*.md` | Symlinked directly |
 | `~/.claude/settings.local.json` | Template (first run only) | Copied, never overwritten |
+
+## Skills and Agents
+
+**Skills** (`/command`) are interactive — they run in the main conversation and can ask follow-up questions. Invoke them with `/skill-name`.
+
+| Skill | Description |
+|-------|-------------|
+| `/onboard` | Interactive setup wizard for new lab members |
+| `/slurm-job` | Create or modify an sbatch job script |
+| `/slurm-debug` | Diagnose why a Slurm job failed or is stuck |
+| `/slurm-status` | Show real-time GPU/resource usage (cluster-specific, generated) |
+
+**Agents** (`@agent`) are autonomous — they gather data independently and return a report. Invoke them with `@agent-name` or let Claude auto-delegate.
+
+| Agent | Description |
+|-------|-------------|
+| `@slurm-queue` | Overview of your active, pending, and recent jobs |
+| `@slurm-resource` | Reference card of available accounts, partitions, and GPUs |
+| `@slurm-storage` | Scan home directory usage and suggest cleanup |
 
 ## Adding a New Module
 
