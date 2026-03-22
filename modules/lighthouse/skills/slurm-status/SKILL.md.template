@@ -1,6 +1,6 @@
 ---
 name: slurm-status
-description: Show current GPU and resource usage on Lighthouse, who is using A100 80GB GPUs, and what resources the user can request right now.
+description: Show current GPU and resource usage on Lighthouse, who is using {{LH_GPU_TYPE}} GPUs, and what resources the user can request right now.
 allowed-tools: Bash(sinfo *), Bash(squeue *), Bash(sacctmgr *)
 ---
 
@@ -12,6 +12,7 @@ Run the following commands and synthesize a clear, concise status report for the
 
 - Username: `{{LH_USERNAME}}`
 - GPU account: `{{LH_ACCOUNT}}`
+- GPU partition: `{{LH_PARTITION}}`
 - Group GPU allocation: **{{LH_GPU_COUNT}} x {{LH_GPU_TYPE}}** shared across the lab
 
 ## Steps
@@ -20,7 +21,7 @@ Run the following commands and synthesize a clear, concise status report for the
 
 Run:
 ```bash
-sinfo -p gpu -o "%12P %16G %5D %8T %10C %12m" 2>&1
+sinfo -p {{LH_PARTITION}} -o "%12P %16G %5D %8T %10C %12m" 2>&1
 ```
 
 Summarize: partition, GPU type, total nodes, node states, total vs available CPUs.
@@ -29,7 +30,7 @@ Summarize: partition, GPU type, total nodes, node states, total vs available CPU
 
 Run:
 ```bash
-sinfo -p gpu -N -o "%12N %16G %20C %10e %5T" 2>&1
+sinfo -p {{LH_PARTITION}} -N -o "%12N %16G %20C %10e %5T" 2>&1
 ```
 
 Summarize how many GPUs and how much memory are free.
@@ -38,7 +39,7 @@ Summarize how many GPUs and how much memory are free.
 
 Run:
 ```bash
-squeue -p gpu -t R -o "%.10i %.12u %.16a %.2t %.12M %.4C %8m %b %R" 2>&1
+squeue -p {{LH_PARTITION}} -t R -o "%.10i %.12u %.16a %.2t %.12M %.4C %8m %b %R" 2>&1
 ```
 
 Summarize by user: how many GPUs each person is consuming. Highlight the user's own usage.
@@ -47,7 +48,7 @@ Summarize by user: how many GPUs each person is consuming. Highlight the user's 
 
 Run:
 ```bash
-squeue -p gpu -t PD -o "%.10i %.12u %.16a %.20r %b" 2>&1 | head -30
+squeue -p {{LH_PARTITION}} -t PD -o "%.10i %.12u %.16a %.20r %b" 2>&1 | head -30
 ```
 
 Summarize: how many jobs pending, by whom, and why (reason codes).
@@ -62,7 +63,7 @@ squeue -u {{LH_USERNAME}} -o "%.10i %.12P %.20j %.2t %.12M %.4C %8m %b %R" 2>&1
 ### 6. What can you request right now?
 
 Based on the above data, report:
-- **Available A100 80GB GPUs** out of {{LH_GPU_COUNT}} total
+- **Available {{LH_GPU_TYPE}} GPUs** out of {{LH_GPU_COUNT}} total
 - **Who is currently using GPUs** and estimated remaining time
 - **Pending queue depth** — will you need to wait?
 - Recommendation on how many GPUs to request given current load
