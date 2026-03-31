@@ -173,8 +173,9 @@ for module in "${MODULE_LIST[@]}"; do
             info "Configuring Lighthouse module..."
             prompt_var "LH_USERNAME" "Slurm username" "$(whoami)"
             prompt_var "LH_ACCOUNT" "GPU account" ""
+            prompt_var "LH_PARTITION" "GPU partition name" "qmei-a100"
             prompt_var "LH_GPU_COUNT" "Group GPU allocation (total GPUs)" "4"
-            prompt_var "LH_GPU_TYPE" "GPU type" "A100 80GB"
+            prompt_var "LH_GPU_TYPE" "GPU type" "A100-SXM4-80GB"
             ;;
         none)
             info "No cluster modules selected."
@@ -304,30 +305,43 @@ expand_template() {
     echo "$content" > "$output"
 }
 
+# Determine which slurm-status template to use.
+# If both greatlakes and lighthouse are active, use the combined template.
+_has_gl=false
+_has_lh=false
 for module in "${MODULE_LIST[@]}"; do
-    case "$module" in
-        greatlakes)
-            if [[ -f "$SCRIPT_DIR/modules/greatlakes/skills/slurm-status/SKILL.md.template" ]]; then
-                info "Generating slurm-status skill..."
-                mkdir -p "$BUILD_DIR/skills/slurm-status"
-                expand_template \
-                    "$SCRIPT_DIR/modules/greatlakes/skills/slurm-status/SKILL.md.template" \
-                    "$BUILD_DIR/skills/slurm-status/SKILL.md"
-                ok "Generated slurm-status skill"
-            fi
-            ;;
-        lighthouse)
-            if [[ -f "$SCRIPT_DIR/modules/lighthouse/skills/slurm-status/SKILL.md.template" ]]; then
-                info "Generating slurm-status skill..."
-                mkdir -p "$BUILD_DIR/skills/slurm-status"
-                expand_template \
-                    "$SCRIPT_DIR/modules/lighthouse/skills/slurm-status/SKILL.md.template" \
-                    "$BUILD_DIR/skills/slurm-status/SKILL.md"
-                ok "Generated slurm-status skill"
-            fi
-            ;;
-    esac
+    [[ "$module" == "greatlakes" ]] && _has_gl=true
+    [[ "$module" == "lighthouse" ]] && _has_lh=true
 done
+
+if $_has_gl && $_has_lh; then
+    if [[ -f "$SCRIPT_DIR/modules/combined/skills/slurm-status/SKILL.md.template" ]]; then
+        info "Generating combined slurm-status skill (Great Lakes + Lighthouse)..."
+        mkdir -p "$BUILD_DIR/skills/slurm-status"
+        expand_template \
+            "$SCRIPT_DIR/modules/combined/skills/slurm-status/SKILL.md.template" \
+            "$BUILD_DIR/skills/slurm-status/SKILL.md"
+        ok "Generated combined slurm-status skill"
+    fi
+elif $_has_gl; then
+    if [[ -f "$SCRIPT_DIR/modules/greatlakes/skills/slurm-status/SKILL.md.template" ]]; then
+        info "Generating slurm-status skill (Great Lakes)..."
+        mkdir -p "$BUILD_DIR/skills/slurm-status"
+        expand_template \
+            "$SCRIPT_DIR/modules/greatlakes/skills/slurm-status/SKILL.md.template" \
+            "$BUILD_DIR/skills/slurm-status/SKILL.md"
+        ok "Generated slurm-status skill"
+    fi
+elif $_has_lh; then
+    if [[ -f "$SCRIPT_DIR/modules/lighthouse/skills/slurm-status/SKILL.md.template" ]]; then
+        info "Generating slurm-status skill (Lighthouse)..."
+        mkdir -p "$BUILD_DIR/skills/slurm-status"
+        expand_template \
+            "$SCRIPT_DIR/modules/lighthouse/skills/slurm-status/SKILL.md.template" \
+            "$BUILD_DIR/skills/slurm-status/SKILL.md"
+        ok "Generated slurm-status skill"
+    fi
+fi
 
 # --- Create symlinks ---
 create_symlink() {
@@ -349,21 +363,10 @@ create_symlink() {
 create_symlink "$BUILD_DIR/settings.json" "$CLAUDE_DIR/settings.json"
 create_symlink "$SCRIPT_DIR/shared/statusline-command.sh" "$CLAUDE_DIR/statusline-command.sh"
 
-# Symlink skill directories
-for module in "${MODULE_LIST[@]}"; do
-    case "$module" in
-        greatlakes)
-            if [[ -d "$BUILD_DIR/skills/slurm-status" ]]; then
-                create_symlink "$BUILD_DIR/skills/slurm-status" "$CLAUDE_DIR/skills/slurm-status"
-            fi
-            ;;
-        lighthouse)
-            if [[ -d "$BUILD_DIR/skills/slurm-status" ]]; then
-                create_symlink "$BUILD_DIR/skills/slurm-status" "$CLAUDE_DIR/skills/slurm-status"
-            fi
-            ;;
-    esac
-done
+# Symlink generated skill directories (e.g. slurm-status)
+if [[ -d "$BUILD_DIR/skills/slurm-status" ]]; then
+    create_symlink "$BUILD_DIR/skills/slurm-status" "$CLAUDE_DIR/skills/slurm-status"
+fi
 
 # Symlink shared hooks directory
 if [[ -d "$SCRIPT_DIR/shared/hooks" ]]; then
