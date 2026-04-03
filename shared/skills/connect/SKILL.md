@@ -49,28 +49,33 @@ If `expect` is missing, suggest `module load expect` or installing it. Do not pr
 
 If `~/.env` does not contain `SSH_UMICH_PASS`:
 
-Ask the user for their UM (UMICH) password. Explain:
-> I'll store your UM password in `~/.env` so the SSH automation script can read it. This file has restricted permissions (readable only by you). Since `~/` is shared via NFS, this works from both clusters.
+**Do NOT ask the user to type their password into the chat or write it yourself.** Instead, tell the user to create the file themselves using one of these methods:
 
-**Important**: Ask the user to type or paste their password. Do NOT echo it back or display it in any output.
+> I need your UM password stored in `~/.env` so the SSH automation script can use it. **Please create this file yourself** — I won't handle your password directly.
+>
+> Run this in your terminal (replace `YOUR_PASSWORD` with your actual UM password):
+> ```
+> ! echo 'SSH_UMICH_PASS="YOUR_PASSWORD"' > ~/.env && chmod 600 ~/.env
+> ```
+>
+> Or use an editor:
+> ```
+> ! vim ~/.env
+> ```
+> Add this line: `SSH_UMICH_PASS="your_password_here"`
+> Then save and run: `! chmod 600 ~/.env`
+>
+> **Security note**: This is a plaintext password protected only by file permissions (`-rw-------`). Since `~/` is shared via NFS, it works from both clusters. To remove it later, delete the file or the `SSH_UMICH_PASS` line.
 
-If `~/.env` already contains `SSH_UMICH_PASS`, **replace** the existing line (do not append a duplicate). If the file doesn't exist or doesn't contain the variable, append:
+The `!` prefix runs the command in the current terminal session so Claude Code doesn't capture the password.
 
-```
-SSH_UMICH_PASS="<password>"
-```
-
-Then set permissions:
+After the user confirms they've done it, verify:
 ```bash
-chmod 600 ~/.env
+test -f ~/.env && grep -c '^SSH_UMICH_PASS=' ~/.env
+ls -la ~/.env
 ```
 
-Verify exactly one entry:
-```bash
-grep -c '^SSH_UMICH_PASS=' ~/.env
-```
-
-**Security note**: Tell the user this is a plaintext password protected only by file permissions (`-rw-------`). To remove it later, delete the `SSH_UMICH_PASS` line from `~/.env`.
+If the count is not `1` or permissions are not `-rw-------`, help the user fix it.
 
 ### 3.3 Configure SSH multiplexing
 
