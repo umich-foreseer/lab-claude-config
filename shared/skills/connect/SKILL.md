@@ -84,7 +84,14 @@ Ensure directories exist:
 mkdir -p ~/.local/bin ~/.ssh && chmod 700 ~/.ssh
 ```
 
-If `~/.ssh/config` does not have a Host entry for the remote cluster, append:
+If `~/.ssh/config` does not have a Host entry for the remote cluster, append it and set permissions:
+
+After writing, always ensure correct permissions:
+```bash
+chmod 600 ~/.ssh/config
+```
+
+Append this Host block:
 
 **If remote is Great Lakes:**
 ```
@@ -191,16 +198,15 @@ If already alive, report it and skip to Step 5.
 
 ### 4.2 Run the expect script
 
-Tell the user:
-> Connecting to `<remote>`. Approve the Duo push on your phone.
+**Do NOT run the expect script yourself via Bash tool** — it handles the password and Duo MFA interactively. Tell the user to run it themselves:
 
-```bash
-~/.local/bin/ssh-<remote-short>-auto
-```
+> Run this in your terminal to connect (approve the Duo push on your phone when prompted):
+> ```
+> ! ~/.local/bin/ssh-<remote-short>-auto
+> ```
+> The command may appear to hang after Duo approval — that's normal. Cancel it once you see the approval go through. The SSH process is already running in the background.
 
-**Note**: After Duo approval, the command may appear to hang. This is normal — the user may need to cancel the running command once the Duo approval goes through. The SSH process forks to the background.
-
-Verify:
+After the user confirms they've run it, verify:
 ```bash
 ssh -O check <remote-alias> 2>&1
 ```
@@ -208,7 +214,7 @@ ssh -O check <remote-alias> 2>&1
 If it fails:
 - Check if Duo was approved
 - Check password in `~/.env`
-- Try `ssh <remote-alias>` manually
+- Try `! ssh <remote-alias>` manually
 
 ## Step 5: Connectivity test
 
