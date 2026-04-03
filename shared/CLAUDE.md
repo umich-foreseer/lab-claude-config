@@ -57,6 +57,8 @@ rm -rf "$SCRATCH_DIR"
 - `/slurm-job` — create or modify sbatch scripts with correct accounts, partitions, and best practices
 - `/slurm-debug` — diagnose why a job failed, was killed, or is stuck pending
 - `/onboard` — set up a new lab member's Claude Code configuration
+- `/connect-setup` — one-time setup: store UM credentials and create automated SSH scripts for cross-cluster access
+- `/connect` — establish or refresh the cross-cluster SSH connection (no questions asked)
 
 **Agents** (Claude uses these automatically when relevant, or you can ask for them by name):
 - `slurm-queue` — show your active, pending, and recent jobs with status and quick actions

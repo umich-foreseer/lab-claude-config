@@ -21,7 +21,7 @@ Check GPU availability across **Great Lakes** (local) and **Lighthouse** (remote
 - GPU account: `{{LH_ACCOUNT}}`
 - GPU partition: `{{LH_PARTITION}}`
 - Group GPU allocation: **{{LH_GPU_COUNT}} x {{LH_GPU_TYPE}}** shared across the lab
-- SSH control socket: `~/.ssh/ctrl-lighthouse`
+- SSH Host alias: `lighthouse` (configured via `~/.ssh/config`, set up by `/connect-setup`)
 
 ## Steps
 
@@ -85,40 +85,37 @@ Sum up the memory being used by all running jobs under `{{GL_ACCOUNT_OWNED}}`. C
 
 Run:
 ```bash
-ssh -O check -o ControlPath=~/.ssh/ctrl-lighthouse lighthouse.arc-ts.umich.edu 2>&1
+ssh -O check lighthouse 2>&1
 ```
 
 **If the socket is NOT alive**, skip all Lighthouse steps and instead report:
 
-> **Lighthouse**: SSH control socket not active. To enable cross-cluster status, run:
-> ```
-> ! ssh -o ControlMaster=yes -o ControlPath=~/.ssh/ctrl-lighthouse -o ControlPersist=24h lighthouse.arc-ts.umich.edu "echo connected && exit"
-> ```
+> **Lighthouse**: SSH connection not active. To connect, run `/connect` (or `~/.local/bin/ssh-lh-auto`).
 
 **If the socket IS alive**, continue with the steps below. All Lighthouse commands use:
 ```
-ssh -o ControlPath=~/.ssh/ctrl-lighthouse lighthouse.arc-ts.umich.edu "<command>"
+ssh lighthouse "<command>"
 ```
 
 #### B1. GPU partition overview
 
 Run:
 ```bash
-ssh -o ControlPath=~/.ssh/ctrl-lighthouse lighthouse.arc-ts.umich.edu "sinfo -p {{LH_PARTITION}} -o '%12P %16G %5D %8T %10C %12m' 2>&1"
+ssh lighthouse "sinfo -p {{LH_PARTITION}} -o '%12P %16G %5D %8T %10C %12m' 2>&1"
 ```
 
 #### B2. Who is using GPUs right now
 
 Run:
 ```bash
-ssh -o ControlPath=~/.ssh/ctrl-lighthouse lighthouse.arc-ts.umich.edu "squeue -p {{LH_PARTITION}} -t R -o '%.10i %.12u %.16a %.2t %.12M %.4C %8m %b %R' 2>&1"
+ssh lighthouse "squeue -p {{LH_PARTITION}} -t R -o '%.10i %.12u %.16a %.2t %.12M %.4C %8m %b %R' 2>&1"
 ```
 
 #### B3. User's current jobs on Lighthouse
 
 Run:
 ```bash
-ssh -o ControlPath=~/.ssh/ctrl-lighthouse lighthouse.arc-ts.umich.edu "squeue -u {{LH_USERNAME}} -o '%.10i %.12P %.20j %.2t %.12M %.4C %8m %b %R' 2>&1"
+ssh lighthouse "squeue -u {{LH_USERNAME}} -o '%.10i %.12P %.20j %.2t %.12M %.4C %8m %b %R' 2>&1"
 ```
 
 ### Part C: Unified Summary
@@ -136,7 +133,7 @@ Combined table of all running and pending jobs across both clusters.
 | Great Lakes | spgpu2 (L40S) | L40S 48GB | _N_ free, _M_ GB group budget remaining | Priority access |
 | Great Lakes | gpu-rtx6000 | RTX 6000 96GB | _N_ free | Shared, may queue |
 | Great Lakes | spgpu (A40) | A40 48GB | _N_ free | Shared |
-| Lighthouse | {{LH_PARTITION}} | {{LH_GPU_TYPE}} | _N_ of {{LH_GPU_COUNT}} free | Requires SSH socket |
+| Lighthouse | {{LH_PARTITION}} | {{LH_GPU_TYPE}} | _N_ of {{LH_GPU_COUNT}} free | Requires `/connect` |
 
 Include a **recommendation**: which cluster/partition is best for submitting right now, considering availability, queue depth, and the user's priority access.
 
