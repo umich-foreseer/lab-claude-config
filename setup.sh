@@ -371,6 +371,10 @@ fi
 # Symlink shared hook files (individual files, not the whole directory,
 # to preserve any user-created hooks already in ~/.claude/hooks/)
 if [[ -d "$SCRIPT_DIR/shared/hooks" ]]; then
+    # Remove old directory-level symlink from previous setup versions
+    if [[ -L "$CLAUDE_DIR/hooks" ]]; then
+        rm "$CLAUDE_DIR/hooks"
+    fi
     mkdir -p "$CLAUDE_DIR/hooks"
     for hook_file in "$SCRIPT_DIR/shared/hooks"/*; do
         if [[ -f "$hook_file" ]]; then
