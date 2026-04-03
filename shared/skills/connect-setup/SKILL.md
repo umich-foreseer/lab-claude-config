@@ -62,7 +62,7 @@ Ask the user for their UM (UMICH) password. Explain:
 
 **Important**: Ask the user to type or paste their password. Do NOT echo it back or display it in any output.
 
-Write to `~/.env` (append if file exists, create if not). Use the Edit tool to add the line if other content exists, or Write tool if creating fresh:
+If `~/.env` already contains `SSH_UMICH_PASS`, **replace** the existing line (do not append a duplicate). Use the Edit tool to swap the old line for the new one. If the file doesn't exist or doesn't contain the variable, append:
 
 ```
 SSH_UMICH_PASS="<password>"
@@ -73,13 +73,17 @@ Then set permissions:
 chmod 600 ~/.env
 ```
 
-Verify:
+Verify there is exactly one entry:
 ```bash
 ls -la ~/.env
 grep -c 'SSH_UMICH_PASS' ~/.env
 ```
 
+If the count is not `1`, fix the file so there is exactly one `SSH_UMICH_PASS` line.
+
 Confirm to the user that the password is stored and the file permissions are restricted.
+
+**Security note**: Tell the user this is a plaintext password protected only by file permissions (`-rw-------`). To remove it later, delete the `SSH_UMICH_PASS` line from `~/.env`. Never loosen permissions on this file.
 
 ## Phase 2: SSH Config
 
@@ -134,16 +138,24 @@ Based on the detected cluster (Phase 0), write the appropriate script.
 
 ```expect
 #!/usr/bin/expect -f
-set fp [open "$env(HOME)/.env" r]
+if {[catch {open "$env(HOME)/.env" r} fp]} {
+    puts stderr "Error: unable to read $env(HOME)/.env"
+    exit 1
+}
 set envdata [read $fp]
 close $fp
-regexp {SSH_UMICH_PASS="([^"]+)"} $envdata -> password
+if {![regexp {SSH_UMICH_PASS="([^"]+)"} $envdata -> password] || $password eq ""} {
+    puts stderr "Error: SSH_UMICH_PASS not found in $env(HOME)/.env"
+    exit 1
+}
 
 set timeout 60
 spawn ssh -fN lighthouse
 
-expect "Password:"
-send "$password\r"
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    -nocase "*assword:" { send "$password\r" }
+}
 
 expect "Passcode or option*"
 send "1\r"
@@ -156,16 +168,24 @@ catch {expect eof}
 
 ```expect
 #!/usr/bin/expect -f
-set fp [open "$env(HOME)/.env" r]
+if {[catch {open "$env(HOME)/.env" r} fp]} {
+    puts stderr "Error: unable to read $env(HOME)/.env"
+    exit 1
+}
 set envdata [read $fp]
 close $fp
-regexp {SSH_UMICH_PASS="([^"]+)"} $envdata -> password
+if {![regexp {SSH_UMICH_PASS="([^"]+)"} $envdata -> password] || $password eq ""} {
+    puts stderr "Error: SSH_UMICH_PASS not found in $env(HOME)/.env"
+    exit 1
+}
 
 set timeout 60
 spawn ssh -fN greatlakes
 
-expect "Password:"
-send "$password\r"
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    -nocase "*assword:" { send "$password\r" }
+}
 
 expect "Passcode or option*"
 send "1\r"
