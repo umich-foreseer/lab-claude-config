@@ -116,9 +116,9 @@ Scale memory and CPUs proportionally for multi-GPU jobs (e.g., 2 L40S → `--mem
    ```bash
    SCRATCH_DIR=/scratch/${SLURM_ACCOUNT}/${USER}/${SLURM_JOB_ID}
    mkdir -p "$SCRATCH_DIR"
-   cp -r /nfs/turbo/<volume>/data "$SCRATCH_DIR/"
+   cp -r /nfs/turbo/si-qmei/${USER}/data "$SCRATCH_DIR/"
    # ... run job from $SCRATCH_DIR ...
-   cp -r "$SCRATCH_DIR/output" /nfs/turbo/<volume>/results/
+   cp -r "$SCRATCH_DIR/output" /nfs/turbo/si-qmei/${USER}/results/
    rm -rf "$SCRATCH_DIR"
    ```
 

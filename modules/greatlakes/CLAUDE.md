@@ -39,7 +39,7 @@ srun --partition=spgpu2 --account={{GL_ACCOUNT_OWNED}} --gres=gpu:1 --mem=60G --
 | Storage | Path | Quota | Purge |
 |---|---|---|---|
 | Home | `~/` | ~80 GiB | None |
-| Turbo | `/nfs/turbo/si-qmei/<user>/` | 10 TB shared | None |
+| Turbo | `/nfs/turbo/si-qmei/${USER}/` | 10 TB shared | None |
 | Scratch | `/scratch/<account>/<project>/<user>/` | 10 TB / 1M inodes per account | **60 days** untouched |
 
 Use turbo for persistent large files. Use scratch for temporary high-performance I/O during jobs (stage in from turbo, copy results back).

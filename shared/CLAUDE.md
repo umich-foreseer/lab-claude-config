@@ -10,7 +10,7 @@
 
 ### Turbo (persistent large storage)
 
-- Path: `/nfs/turbo/si-qmei/<user>/` — **10 TB shared quota** across the lab, no purge.
+- Path: `/nfs/turbo/si-qmei/${USER}/` — **10 TB shared quota** across the lab, no purge.
 - Before large file operations (downloading datasets, extracting archives), check available space: `df -h /nfs/turbo/si-qmei`
 - **Deleting files does not immediately free disk space.** Turbo keeps daily snapshots (~7 days) so deleted data continues to consume quota until snapshots rotate out. Plan storage carefully.
 - Use for: datasets, model checkpoints, experiment logs, wandb artifacts, conda envs, containers, caches (HF, torch, pip).
@@ -33,13 +33,13 @@
 # At job start — stage data from turbo to scratch
 SCRATCH_DIR=/scratch/${SLURM_ACCOUNT}/${USER}/${SLURM_JOB_ID}
 mkdir -p "$SCRATCH_DIR"
-cp -r /nfs/turbo/si-qmei/<user>/data/my_dataset "$SCRATCH_DIR/"
+cp -r /nfs/turbo/si-qmei/${USER}/data/my_dataset "$SCRATCH_DIR/"
 
 # Run training from scratch
 python train.py --data-dir "$SCRATCH_DIR/my_dataset" --output-dir "$SCRATCH_DIR/output"
 
 # At job end — copy results back to turbo
-cp -r "$SCRATCH_DIR/output" /nfs/turbo/si-qmei/<user>/results/
+cp -r "$SCRATCH_DIR/output" /nfs/turbo/si-qmei/${USER}/results/
 # Clean up scratch (optional — purge policy will also handle it)
 rm -rf "$SCRATCH_DIR"
 ```
