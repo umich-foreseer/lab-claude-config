@@ -4,7 +4,7 @@ This is the University of Michigan Lighthouse cluster with dedicated {{LH_GPU_TY
 
 ## Cross-Cluster Access (optional, for advanced users)
 
-If you also use Great Lakes, run `/connect-setup` for one-time setup (configures `~/.ssh/config` and automated login), then `/connect` to establish the connection. Once connected:
+If you also use Great Lakes, run `/connect` to set up and establish the SSH connection. Once connected:
 
 ```bash
 # All commands go through the multiplexed SSH socket — no re-auth needed

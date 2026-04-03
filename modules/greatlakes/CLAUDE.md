@@ -52,7 +52,7 @@ Use turbo for persistent large files. Use scratch for temporary high-performance
 
 ## Cross-Cluster Access (optional)
 
-If you also use Lighthouse, run `/connect-setup` for one-time setup (configures `~/.ssh/config` and automated login), then `/connect` to establish the connection. Once connected:
+If you also use Lighthouse, run `/connect` to set up and establish the SSH connection. Once connected:
 
 ```bash
 # All commands go through the multiplexed SSH socket — no re-auth needed

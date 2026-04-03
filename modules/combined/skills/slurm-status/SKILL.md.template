@@ -21,7 +21,7 @@ Check GPU availability across **Great Lakes** (local) and **Lighthouse** (remote
 - GPU account: `{{LH_ACCOUNT}}`
 - GPU partition: `{{LH_PARTITION}}`
 - Group GPU allocation: **{{LH_GPU_COUNT}} x {{LH_GPU_TYPE}}** shared across the lab
-- SSH Host alias: `lighthouse` (configured via `~/.ssh/config`, set up by `/connect-setup`)
+- SSH Host alias: `lighthouse` (configured via `~/.ssh/config`, set up by `/connect`)
 
 ## Steps
 
