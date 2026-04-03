@@ -49,3 +49,13 @@ Use turbo for persistent large files. Use scratch for temporary high-performance
 - L40S memory budget ({{GL_MEMORY_CAP}} GB) is shared across the entire `{{GL_ACCOUNT_OWNED}}` group (~11 members)
 - Estimate ~60 GB memory per L40S GPU when planning requests
 - Use `/slurm-status` skill to check real-time availability before submitting large jobs
+
+## Cross-Cluster Access (optional)
+
+If you also use Lighthouse, run `/connect` to set up and establish the SSH connection. Once connected:
+
+```bash
+# All commands go through the multiplexed SSH socket — no re-auth needed
+ssh lighthouse "sinfo"
+ssh lighthouse "squeue -u $(whoami)"
+```

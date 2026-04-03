@@ -156,6 +156,7 @@ After setup completes:
    - To update: `cd ~/lab-claude-config && git pull && ./setup.sh`
    - Their personal content in CLAUDE.md (outside the markers) is never touched by setup.sh
    - `/slurm-status` is now available for checking cluster status
+   - Run `/connect` to set up cross-cluster SSH if you use both Great Lakes and Lighthouse
 
 ## If setup fails
 

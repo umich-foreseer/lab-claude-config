@@ -4,17 +4,15 @@ This is the University of Michigan Lighthouse cluster with dedicated {{LH_GPU_TY
 
 ## Cross-Cluster Access (optional, for advanced users)
 
-If you also use Great Lakes, you can submit Lighthouse jobs from there via SSH with a persistent control socket:
+If you also use Great Lakes, run `/connect` to set up and establish the SSH connection. Once connected:
 
 ```bash
-# Establish connection from Great Lakes (requires Duo MFA, lasts 24h)
-ssh -o ControlMaster=yes -o ControlPath=~/.ssh/ctrl-lighthouse -o ControlPersist=24h lighthouse.arc-ts.umich.edu "echo connected && exit"
-
-# All subsequent SSH commands multiplex over the socket — no re-auth needed
-ssh -o ControlPath=~/.ssh/ctrl-lighthouse lighthouse.arc-ts.umich.edu "<command>"
+# All commands go through the multiplexed SSH socket — no re-auth needed
+ssh greatlakes "sinfo -p spgpu2"
+ssh greatlakes "squeue -u $(whoami)"
 ```
 
-This enables `/slurm-status` to check both clusters and `/submit-experiment` to submit remotely. If you only use Lighthouse directly, you can ignore this.
+This enables `/slurm-status` to check both clusters. If you only use Lighthouse directly, you can ignore this.
 
 ## Accounts
 
