@@ -50,12 +50,28 @@ rm -rf "$SCRATCH_DIR"
 - Use `srun`/`salloc` for interactive compute or `sbatch` for batch jobs.
 - For long-running tasks (environment setup, training, large data processing), always ensure logs are written to a persistent, user-inspectable location (e.g., `logs/` directory or turbo) so progress can be monitored while the job runs. Use `tee`, explicit `--output`/`--error` in sbatch, or redirect stdout/stderr to a log file.
 
+## Experiment Discipline
+
+Every SLURM experiment should be tracked with structured documentation. This ensures reproducibility, prevents duplicate work, and creates a searchable history of what was tried and what worked.
+
+**Convention**: Each project that runs experiments should maintain:
+- `docs/experiments.md` — compact index (what, why, key result, link to detail file; <100 words per entry)
+- `docs/experiments/<date>_<name>.md` — self-contained detail files (goal, setup, results, observations, reproduce command)
+
+**Naming**: `{type}-{descriptor}-{slug}` — lowercase, hyphens only. Examples: `sft-llama7b-baseline`, `eval-gpt4o-zeroshot`, `pretrain-bert-large-v2`.
+
+**Workflow**: Use `/submit-experiment` to submit jobs (handles naming, logging, cross-cluster submission) and `/harvest` to collect results when jobs complete.
+
+**Completion markers**: Job scripts can write a `logs/<name>_<jobid>.done.json` marker on completion so `/harvest` can auto-discover finished experiments. See the `/harvest` skill for the marker schema.
+
 ## Available Skills & Agents
 
 **Skills** (invoke with `/command`):
 - `/slurm-status` — real-time GPU and resource availability on the cluster
 - `/slurm-job` — create or modify sbatch scripts with correct accounts, partitions, and best practices
 - `/slurm-debug` — diagnose why a job failed, was killed, or is stuck pending
+- `/submit-experiment` — submit a SLURM experiment with proper naming, documentation, and cross-cluster support
+- `/harvest` — discover completed experiments, collect results, and update documentation
 - `/onboard` — set up a new lab member's Claude Code configuration
 
 **Agents** (Claude uses these automatically when relevant, or you can ask for them by name):
