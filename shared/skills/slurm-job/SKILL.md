@@ -118,6 +118,7 @@ Scale memory and CPUs proportionally for multi-GPU jobs (e.g., 2 L40S → `--mem
    mkdir -p "$SCRATCH_DIR"
    cp -r /nfs/turbo/si-qmei/${USER}/data "$SCRATCH_DIR/"
    # ... run job from $SCRATCH_DIR ...
+   mkdir -p /nfs/turbo/si-qmei/${USER}/results
    cp -r "$SCRATCH_DIR/output" /nfs/turbo/si-qmei/${USER}/results/
    rm -rf "$SCRATCH_DIR"
    ```
