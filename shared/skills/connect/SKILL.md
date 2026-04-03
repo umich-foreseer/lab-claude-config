@@ -29,7 +29,7 @@ whoami
 
 ```bash
 test -x ~/.local/bin/ssh-<remote-short>-auto && echo "script OK" || echo "script MISSING"
-test -f ~/.env && grep -q '^SSH_UMICH_PASS=' ~/.env && echo "credentials OK" || echo "credentials MISSING"
+test -f ~/.env && grep -q '^SSH_UMICH_PASS=' ~/.env && grep -q '^SSH_DUO_OPTION=' ~/.env && echo "credentials OK" || echo "credentials MISSING"
 grep -q "^Host.*<remote-alias>" ~/.ssh/config 2>/dev/null && echo "ssh config OK" || echo "ssh config MISSING"
 which expect 2>/dev/null && echo "expect OK" || echo "expect MISSING"
 ```
@@ -47,35 +47,51 @@ If `expect` is missing, suggest `module load expect` or installing it. Do not pr
 
 ### 3.2 Store UM password
 
-If `~/.env` does not contain `SSH_UMICH_PASS`:
+If `~/.env` is missing `SSH_UMICH_PASS` or `SSH_DUO_OPTION`:
 
-**Do NOT ask the user to type their password into the chat or write it yourself.** Instead, tell the user to create the file themselves using one of these methods:
+**Do NOT ask the user to type their password into the chat or write it yourself.** Instead, tell the user to create the file themselves.
 
-> I need your UM password stored in `~/.env` so the SSH automation script can use it. **Please create this file yourself** — I won't handle your password directly.
+First, ask the user which Duo option they prefer. Show them the typical options:
+
+> Which Duo option do you usually use? Common choices:
+> - `1` — Duo Push to your primary phone
+> - `2` — Duo Push to a secondary device
+> - `3` — Phone call
+> - `5` — SMS passcode
 >
-> Run this in your terminal (replace `YOUR_PASSWORD` with your actual UM password):
+> (The exact numbering depends on your enrolled devices. If unsure, pick `1` for Duo Push.)
+
+Once they answer, tell them to store both values:
+
+> **Please create `~/.env` yourself** — I won't handle your password directly.
+>
+> Run this in your terminal (replace `YOUR_PASSWORD` and `DUO_OPTION`):
 > ```
-> ! echo 'SSH_UMICH_PASS="YOUR_PASSWORD"' > ~/.env && chmod 600 ~/.env
+> ! printf 'SSH_UMICH_PASS="YOUR_PASSWORD"\nSSH_DUO_OPTION="DUO_OPTION"\n' > ~/.env && chmod 600 ~/.env
 > ```
 >
 > Or use an editor:
 > ```
 > ! vim ~/.env
 > ```
-> Add this line: `SSH_UMICH_PASS="your_password_here"`
+> Add these lines:
+> ```
+> SSH_UMICH_PASS="your_password_here"
+> SSH_DUO_OPTION="1"
+> ```
 > Then save and run: `! chmod 600 ~/.env`
 >
-> **Security note**: This is a plaintext password protected only by file permissions (`-rw-------`). Since `~/` is shared via NFS, it works from both clusters. To remove it later, delete the file or the `SSH_UMICH_PASS` line.
+> **Security note**: This is a plaintext password protected only by file permissions (`-rw-------`). Since `~/` is shared via NFS, it works from both clusters. To remove it later, delete the file.
 
 The `!` prefix runs the command in the current terminal session so Claude Code doesn't capture the password.
 
 After the user confirms they've done it, verify:
 ```bash
-test -f ~/.env && grep -c '^SSH_UMICH_PASS=' ~/.env
+test -f ~/.env && grep -c '^SSH_UMICH_PASS=' ~/.env && grep -c '^SSH_DUO_OPTION=' ~/.env
 ls -la ~/.env
 ```
 
-If the count is not `1` or permissions are not `-rw-------`, help the user fix it.
+If either count is not `1` or permissions are not `-rw-------`, help the user fix it.
 
 ### 3.3 Configure SSH multiplexing
 
@@ -134,6 +150,13 @@ if {![regexp {SSH_UMICH_PASS="([^"]+)"} $envdata -> password] || $password eq ""
     exit 1
 }
 
+# Read preferred Duo option (default: 1)
+if {[regexp {SSH_DUO_OPTION="([^"]+)"} $envdata -> duo_option]} {
+    # use value from .env
+} else {
+    set duo_option "1"
+}
+
 set timeout 60
 spawn ssh -fN lighthouse
 
@@ -143,7 +166,7 @@ expect {
 }
 
 expect "Passcode or option*"
-send "1\r"
+send "$duo_option\r"
 
 # Wait up to 30s for Duo approval, then exit.
 # ssh -fN forks to background after auth, so the pty may not close cleanly.
@@ -167,6 +190,13 @@ if {![regexp {SSH_UMICH_PASS="([^"]+)"} $envdata -> password] || $password eq ""
     exit 1
 }
 
+# Read preferred Duo option (default: 1)
+if {[regexp {SSH_DUO_OPTION="([^"]+)"} $envdata -> duo_option]} {
+    # use value from .env
+} else {
+    set duo_option "1"
+}
+
 set timeout 60
 spawn ssh -fN greatlakes
 
@@ -176,7 +206,7 @@ expect {
 }
 
 expect "Passcode or option*"
-send "1\r"
+send "$duo_option\r"
 
 # Wait up to 30s for Duo approval, then exit.
 # ssh -fN forks to background after auth, so the pty may not close cleanly.
@@ -227,7 +257,6 @@ If it fails:
 ```bash
 ssh <remote-alias> "hostname -f && whoami"
 ssh <remote-alias> "sinfo --version 2>&1"
-ssh <remote-alias> "ls -d /nfs/turbo/si-qmei 2>&1"
 ```
 
 Present as a checklist:
@@ -238,7 +267,6 @@ Present as a checklist:
 - [x] SSH socket: active (24h)
 - [x] Remote shell: OK
 - [x] Remote Slurm: available
-- [x] Shared storage: accessible
 ```
 
 For any failures, provide one-line remediation.
