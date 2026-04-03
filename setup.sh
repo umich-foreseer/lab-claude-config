@@ -368,9 +368,20 @@ if [[ -d "$BUILD_DIR/skills/slurm-status" ]]; then
     create_symlink "$BUILD_DIR/skills/slurm-status" "$CLAUDE_DIR/skills/slurm-status"
 fi
 
-# Symlink shared hooks directory
+# Symlink shared hook files (individual files, not the whole directory,
+# to preserve any user-created hooks already in ~/.claude/hooks/)
 if [[ -d "$SCRIPT_DIR/shared/hooks" ]]; then
-    create_symlink "$SCRIPT_DIR/shared/hooks" "$CLAUDE_DIR/hooks"
+    # Remove old directory-level symlink from previous setup versions
+    if [[ -L "$CLAUDE_DIR/hooks" ]]; then
+        rm "$CLAUDE_DIR/hooks"
+    fi
+    mkdir -p "$CLAUDE_DIR/hooks"
+    for hook_file in "$SCRIPT_DIR/shared/hooks"/*; do
+        if [[ -f "$hook_file" ]]; then
+            hook_name="$(basename "$hook_file")"
+            create_symlink "$hook_file" "$CLAUDE_DIR/hooks/$hook_name"
+        fi
+    done
 fi
 
 # Symlink shared skills directory contents
@@ -416,7 +427,12 @@ if [[ -d "$BUILD_DIR/skills/slurm-status" ]]; then
     echo "    ~/.claude/skills/slurm-status  -> build/skills/slurm-status"
 fi
 if [[ -d "$SCRIPT_DIR/shared/hooks" ]]; then
-    echo "    ~/.claude/hooks               -> shared/hooks"
+    for hook_file in "$SCRIPT_DIR/shared/hooks"/*; do
+        if [[ -f "$hook_file" ]]; then
+            hook_name="$(basename "$hook_file")"
+            echo "    ~/.claude/hooks/$hook_name -> shared/hooks/$hook_name"
+        fi
+    done
 fi
 if [[ -d "$SCRIPT_DIR/shared/skills" ]]; then
     for skill_dir in "$SCRIPT_DIR/shared/skills"/*/; do
