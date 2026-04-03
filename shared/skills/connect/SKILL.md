@@ -28,7 +28,7 @@ whoami
 Check if the expect script, credentials, and SSH config exist:
 ```bash
 test -x ~/.local/bin/ssh-<remote-short>-auto && echo "script OK" || echo "script MISSING"
-test -f ~/.env && grep -q 'SSH_UMICH_PASS' ~/.env && echo "credentials OK" || echo "credentials MISSING"
+test -f ~/.env && grep -q '^SSH_UMICH_PASS=' ~/.env && echo "credentials OK" || echo "credentials MISSING"
 grep -q "^Host.*<remote-alias>" ~/.ssh/config 2>/dev/null && echo "ssh config OK" || echo "ssh config MISSING"
 ```
 

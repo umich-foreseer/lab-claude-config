@@ -47,7 +47,7 @@ Ask if they want to proceed.
 ### 1.1 Check existing credentials
 
 ```bash
-test -f ~/.env && grep -c 'SSH_UMICH_PASS' ~/.env 2>/dev/null
+test -f ~/.env && grep -c '^SSH_UMICH_PASS=' ~/.env 2>/dev/null
 ```
 
 If `SSH_UMICH_PASS` is already set, tell the user:
@@ -76,7 +76,7 @@ chmod 600 ~/.env
 Verify there is exactly one entry:
 ```bash
 ls -la ~/.env
-grep -c 'SSH_UMICH_PASS' ~/.env
+grep -c '^SSH_UMICH_PASS=' ~/.env
 ```
 
 If the count is not `1`, fix the file so there is exactly one `SSH_UMICH_PASS` line.
@@ -154,7 +154,7 @@ spawn ssh -fN lighthouse
 
 expect {
     "yes/no" { send "yes\r"; exp_continue }
-    -nocase "*assword:" { send "$password\r" }
+    -nocase "*assword:" { send -- "$password\r" }
 }
 
 expect "Passcode or option*"
@@ -184,7 +184,7 @@ spawn ssh -fN greatlakes
 
 expect {
     "yes/no" { send "yes\r"; exp_continue }
-    -nocase "*assword:" { send "$password\r" }
+    -nocase "*assword:" { send -- "$password\r" }
 }
 
 expect "Passcode or option*"

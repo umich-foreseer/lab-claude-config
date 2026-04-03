@@ -56,6 +56,6 @@ If you also use Lighthouse, run `/connect-setup` for one-time setup (configures 
 
 ```bash
 # All commands go through the multiplexed SSH socket — no re-auth needed
-ssh lighthouse "sinfo -p qmei-a100"
+ssh lighthouse "sinfo -p {{LH_PARTITION}}"
 ssh lighthouse "squeue -u $(whoami)"
 ```
