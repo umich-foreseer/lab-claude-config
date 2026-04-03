@@ -1,7 +1,7 @@
 ---
 name: connect
 description: Set up cross-cluster SSH (Great Lakes <-> Lighthouse) and establish the connection. Handles first-time setup automatically.
-allowed-tools: Bash(ssh *), Bash(hostname *), Bash(whoami), Bash(cat *), Bash(ls *), Bash(mkdir *), Bash(chmod *), Bash(test *), Bash(grep *), Bash(expect *), Bash(which *), Bash(*/ssh-*-auto), Bash(sinfo *), Read, Edit, Write
+allowed-tools: Bash(ssh *), Bash(hostname *), Bash(whoami), Bash(cat *), Bash(ls *), Bash(mkdir *), Bash(chmod *), Bash(test *), Bash(grep *), Bash(which *), Bash(sinfo *), Read, Edit, Write
 ---
 
 # Cross-Cluster SSH Connect
@@ -145,8 +145,11 @@ expect {
 expect "Passcode or option*"
 send "1\r"
 
-# SSH forks to background after successful Duo auth, closing the pty.
+# Wait up to 30s for Duo approval, then exit.
+# ssh -fN forks to background after auth, so the pty may not close cleanly.
+set timeout 30
 catch {expect eof}
+exit 0
 ```
 
 **If on Lighthouse** (connecting to Great Lakes), write `~/.local/bin/ssh-gl-auto`:
@@ -175,8 +178,11 @@ expect {
 expect "Passcode or option*"
 send "1\r"
 
-# SSH forks to background after successful Duo auth, closing the pty.
+# Wait up to 30s for Duo approval, then exit.
+# ssh -fN forks to background after auth, so the pty may not close cleanly.
+set timeout 30
 catch {expect eof}
+exit 0
 ```
 
 Make it executable:
