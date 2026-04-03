@@ -12,14 +12,13 @@
 
 - Path: `/nfs/turbo/si-qmei/<user>/` — **10 TB shared quota** across the lab, no purge.
 - Before large file operations (downloading datasets, extracting archives), check available space: `df -h /nfs/turbo/si-qmei`
+- **Deleting files does not immediately free disk space.** Turbo keeps daily snapshots (~7 days) so deleted data continues to consume quota until snapshots rotate out. Plan storage carefully.
 - Use for: datasets, model checkpoints, experiment logs, wandb artifacts, conda envs, containers, caches (HF, torch, pip).
 
 ### Data Den (archival storage)
 
-- UMich's tape-backed archival storage for inactive datasets. 100 TB free with U-M Research Computing Package.
-- Transfer via Globus: source "UMich ARC Non-Sensitive Turbo Volume Collection" → destination "UMich ARC Non-Sensitive Data Den Volume Collection".
-- Bundle many small files into tar before transfer (tape storage prefers fewer large files).
-- Use for datasets no longer actively used but worth retaining for future research or compliance.
+- Tape-backed archival for inactive datasets (100 TB free). Transfer via Globus; tar small files first.
+- Details: https://its.umich.edu/advanced-research-computing/storage/data-den
 
 ### Scratch (high-performance temporary storage)
 
