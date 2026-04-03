@@ -56,6 +56,6 @@ If you also use Lighthouse, run `/connect` to set up and establish the SSH conne
 
 ```bash
 # All commands go through the multiplexed SSH socket — no re-auth needed
-ssh lighthouse "sinfo -p {{LH_PARTITION}}"
+ssh lighthouse "sinfo"
 ssh lighthouse "squeue -u $(whoami)"
 ```

@@ -30,6 +30,7 @@ whoami
 ```bash
 test -x ~/.local/bin/ssh-<remote-short>-auto && echo "script OK" || echo "script MISSING"
 test -f ~/.env && grep -q '^SSH_UMICH_PASS=' ~/.env && grep -q '^SSH_DUO_OPTION=' ~/.env && echo "credentials OK" || echo "credentials MISSING"
+test -f ~/.env && grep -q '^SSH_UMICH_PASS=' ~/.env && grep -q '^SSH_DUO_OPTION=' ~/.env && [ "$(stat -c '%a' ~/.env 2>/dev/null)" = "600" ] && echo "credentials OK" || echo "credentials MISSING"
 grep -q "^Host.*<remote-alias>" ~/.ssh/config 2>/dev/null && echo "ssh config OK" || echo "ssh config MISSING"
 which expect 2>/dev/null && echo "expect OK" || echo "expect MISSING"
 ```
@@ -45,25 +46,24 @@ Walk the user through each missing piece interactively. Skip any sub-step where 
 
 If `expect` is missing, suggest `module load expect` or installing it. Do not proceed without it.
 
-### 3.2 Store UM password
+### 3.2 Store UM credentials
 
 If `~/.env` is missing `SSH_UMICH_PASS` or `SSH_DUO_OPTION`:
+If `~/.env` is missing `SSH_UMICH_PASS`, `SSH_DUO_OPTION`, or correct `600` permissions:
 
 **Do NOT ask the user to type their password into the chat or write it yourself.** Instead, tell the user to create the file themselves.
 
-First, ask the user which Duo option they prefer. Show them the typical options:
+First, ask the user which Duo option they usually use. Show common choices:
 
-> Which Duo option do you usually use? Common choices:
+> Which Duo option do you usually use?
 > - `1` — Duo Push to your primary phone
 > - `2` — Duo Push to a secondary device
 > - `3` — Phone call
 > - `5` — SMS passcode
 >
-> (The exact numbering depends on your enrolled devices. If unsure, pick `1` for Duo Push.)
-
-Once they answer, tell them to store both values:
-
-> **Please create `~/.env` yourself** — I won't handle your password directly.
+> The exact numbering depends on your enrolled devices. If unsure, start with `1`.
+>
+> I need your UM credentials stored in `~/.env` so the SSH automation script can use them. **Please create this file yourself** — I won't handle your password directly.
 >
 > Run this in your terminal (replace `YOUR_PASSWORD` and `DUO_OPTION`):
 > ```
@@ -150,9 +150,8 @@ if {![regexp {SSH_UMICH_PASS="([^"]+)"} $envdata -> password] || $password eq ""
     exit 1
 }
 
-# Read preferred Duo option (default: 1)
 if {[regexp {SSH_DUO_OPTION="([^"]+)"} $envdata -> duo_option]} {
-    # use value from .env
+    # use configured Duo menu option
 } else {
     set duo_option "1"
 }
@@ -190,9 +189,8 @@ if {![regexp {SSH_UMICH_PASS="([^"]+)"} $envdata -> password] || $password eq ""
     exit 1
 }
 
-# Read preferred Duo option (default: 1)
 if {[regexp {SSH_DUO_OPTION="([^"]+)"} $envdata -> duo_option]} {
-    # use value from .env
+    # use configured Duo menu option
 } else {
     set duo_option "1"
 }
