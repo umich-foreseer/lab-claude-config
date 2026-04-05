@@ -35,10 +35,12 @@ Run `./uninstall.sh` — removes symlinks, strips the lab config block from CLAU
 ├── settings.local.json        # Copied from template on first run; never overwritten (your permissions)
 ├── statusline-command.sh      # Symlinked → shared/statusline-command.sh
 ├── skills/
+│   ├── harvest/               # Symlinked → shared/skills/harvest/
 │   ├── onboard/               # Symlinked → shared/skills/onboard/
 │   ├── slurm-debug/           # Symlinked → shared/skills/slurm-debug/
 │   ├── slurm-job/             # Symlinked → shared/skills/slurm-job/
 │   ├── slurm-status/          # Generated from module template → symlinked (cluster-specific)
+│   ├── submit-experiment/     # Symlinked → shared/skills/submit-experiment/
 │   └── connect/               # Symlinked → shared/skills/connect/ (shared across clusters)
 ├── hooks/                     # Symlinked → shared/hooks/ (PreToolUse hooks)
 │   └── node-context.sh        # Detects login vs compute node, injects advisory context
@@ -55,6 +57,8 @@ Run `./uninstall.sh` — removes symlinks, strips the lab config block from CLAU
 | Skill | Description |
 |-------|-------------|
 | `/onboard` | Interactive setup wizard for new lab members |
+| `/submit-experiment` | Submit a SLURM experiment with naming, documentation, and cross-cluster support |
+| `/harvest` | Discover completed experiments, collect results, and update documentation |
 | `/slurm-job` | Create or modify an sbatch job script |
 | `/slurm-debug` | Diagnose why a Slurm job failed or is stuck |
 | `/slurm-status` | Show real-time GPU/resource usage (cluster-specific, generated) |
