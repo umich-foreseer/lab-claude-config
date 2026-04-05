@@ -1,7 +1,7 @@
 ---
 name: connect
 description: Set up cross-cluster SSH (Great Lakes <-> Lighthouse) and establish the connection. Handles first-time setup automatically.
-allowed-tools: Bash(ssh *), Bash(hostname *), Bash(whoami), Bash(cat *), Bash(ls *), Bash(mkdir *), Bash(chmod *), Bash(test *), Bash(grep *), Bash(which *), Bash(sinfo *), Read, Edit, Write
+allowed-tools: Bash(ssh *), Bash(hostname *), Bash(whoami), Bash(cat *), Bash(ls *), Bash(mkdir *), Bash(chmod *), Bash(test *), Bash(grep *), Bash(which *), Bash(sinfo *), Bash(~/.local/bin/ssh-*), Read, Edit, Write
 ---
 
 # Cross-Cluster SSH Connect
@@ -57,17 +57,16 @@ First, ask the user which Duo option they usually use. Show common choices:
 
 > Which Duo option do you usually use?
 > - `1` — Duo Push to your primary phone
-> - `2` — Duo Push to a secondary device
-> - `3` — Phone call
-> - `5` — SMS passcode
+> - `2` — Phone call to your primary phone
+> - `3` — SMS passcodes to your primary phone
 >
-> The exact numbering depends on your enrolled devices. If unsure, start with `1`.
+> Most people should just use `1` (Duo Push). If unsure, start with `1`.
 >
 > I need your UM credentials stored in `~/.env` so the SSH automation script can use them. **Please create this file yourself** — I won't handle your password directly.
 >
 > Run this in your terminal (replace `YOUR_PASSWORD` and `DUO_OPTION`):
 > ```
-> ! printf 'SSH_UMICH_PASS="YOUR_PASSWORD"\nSSH_DUO_OPTION="DUO_OPTION"\n' > ~/.env && chmod 600 ~/.env
+> ! echo -e 'SSH_UMICH_PASS="YOUR_PASSWORD"\nSSH_DUO_OPTION="1"' > ~/.env && chmod 600 ~/.env
 > ```
 >
 > Or use an editor:
@@ -232,15 +231,19 @@ If already alive, report it and skip to Step 5.
 
 ### 4.2 Run the expect script
 
-**Do NOT run the expect script yourself via Bash tool** — it handles the password and Duo MFA interactively. Tell the user to run it themselves:
+Run the expect script yourself via the Bash tool. Use a 60-second timeout so it doesn't block forever — the script will handle password and Duo automatically. Before running, tell the user:
 
-> Run this in your terminal to connect (approve the Duo push on your phone when prompted):
-> ```
-> ! ~/.local/bin/ssh-<remote-short>-auto
-> ```
-> The command may appear to hang after Duo approval — that's normal. Cancel it once you see the approval go through. The SSH process is already running in the background.
+> Connecting now — **approve the Duo push on your phone** when you receive it.
+>
+> Once you've approved, press **Esc** to return here and let me know so I can verify the connection.
 
-After the user confirms they've run it, verify:
+```bash
+~/.local/bin/ssh-<remote-short>-auto
+```
+
+Use a 60s timeout on the Bash call. The command may exit with a non-zero code or timeout after Duo approval — that's expected since `ssh -fN` forks to background and the pty doesn't close cleanly.
+
+After the script finishes (or the user returns after approving Duo), verify:
 ```bash
 ssh -O check <remote-alias> 2>&1
 ```

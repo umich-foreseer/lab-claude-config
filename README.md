@@ -38,7 +38,8 @@ Run `./uninstall.sh` — removes symlinks, strips the lab config block from CLAU
 │   ├── onboard/               # Symlinked → shared/skills/onboard/
 │   ├── slurm-debug/           # Symlinked → shared/skills/slurm-debug/
 │   ├── slurm-job/             # Symlinked → shared/skills/slurm-job/
-│   └── slurm-status/          # Generated from module template → symlinked (cluster-specific)
+│   ├── slurm-status/          # Generated from module template → symlinked (cluster-specific)
+│   └── connect/               # Symlinked → shared/skills/connect/ (shared across clusters)
 ├── hooks/                     # Symlinked → shared/hooks/ (PreToolUse hooks)
 │   └── node-context.sh        # Detects login vs compute node, injects advisory context
 └── agents/
@@ -57,6 +58,7 @@ Run `./uninstall.sh` — removes symlinks, strips the lab config block from CLAU
 | `/slurm-job` | Create or modify an sbatch job script |
 | `/slurm-debug` | Diagnose why a Slurm job failed or is stuck |
 | `/slurm-status` | Show real-time GPU/resource usage (cluster-specific, generated) |
+| `/connect` | Set up cross-cluster SSH (Great Lakes ↔ Lighthouse) and establish the connection |
 
 **Agents** (`@agent`) are autonomous — they gather data independently and return a report. Invoke them with `@agent-name` or let Claude auto-delegate.
 
