@@ -12,7 +12,7 @@ ssh greatlakes "sinfo -p spgpu2"
 ssh greatlakes "squeue -u $(whoami)"
 ```
 
-This enables `/slurm-status` to check both clusters. If you only use Lighthouse directly, you can ignore this.
+This enables `/slurm-status` to check both clusters and `/submit-experiment` to submit remotely. If you only use Lighthouse directly, you can ignore this.
 
 ## Accounts
 

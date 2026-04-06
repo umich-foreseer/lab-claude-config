@@ -29,7 +29,6 @@ whoami
 
 ```bash
 test -x ~/.local/bin/ssh-<remote-short>-auto && echo "script OK" || echo "script MISSING"
-test -f ~/.env && grep -q '^SSH_UMICH_PASS=' ~/.env && grep -q '^SSH_DUO_OPTION=' ~/.env && echo "credentials OK" || echo "credentials MISSING"
 test -f ~/.env && grep -q '^SSH_UMICH_PASS=' ~/.env && grep -q '^SSH_DUO_OPTION=' ~/.env && [ "$(stat -c '%a' ~/.env 2>/dev/null)" = "600" ] && echo "credentials OK" || echo "credentials MISSING"
 grep -q "^Host.*<remote-alias>" ~/.ssh/config 2>/dev/null && echo "ssh config OK" || echo "ssh config MISSING"
 which expect 2>/dev/null && echo "expect OK" || echo "expect MISSING"
@@ -48,7 +47,6 @@ If `expect` is missing, suggest `module load expect` or installing it. Do not pr
 
 ### 3.2 Store UM credentials
 
-If `~/.env` is missing `SSH_UMICH_PASS` or `SSH_DUO_OPTION`:
 If `~/.env` is missing `SSH_UMICH_PASS`, `SSH_DUO_OPTION`, or correct `600` permissions:
 
 **Do NOT ask the user to type their password into the chat or write it yourself.** Instead, tell the user to create the file themselves.
@@ -64,12 +62,7 @@ First, ask the user which Duo option they usually use. Show common choices:
 >
 > I need your UM credentials stored in `~/.env` so the SSH automation script can use them. **Please create this file yourself** — I won't handle your password directly.
 >
-> Run this in your terminal (replace `YOUR_PASSWORD` and `DUO_OPTION`):
-> ```
-> ! echo -e 'SSH_UMICH_PASS="YOUR_PASSWORD"\nSSH_DUO_OPTION="1"' > ~/.env && chmod 600 ~/.env
-> ```
->
-> Or use an editor:
+> **Option A** (recommended — doesn't leave your password in shell history):
 > ```
 > ! vim ~/.env
 > ```
@@ -79,6 +72,11 @@ First, ask the user which Duo option they usually use. Show common choices:
 > SSH_DUO_OPTION="1"
 > ```
 > Then save and run: `! chmod 600 ~/.env`
+>
+> **Option B** (quick, but the command will appear in shell history):
+> ```
+> ! printf 'SSH_UMICH_PASS="YOUR_PASSWORD"\nSSH_DUO_OPTION="DUO_OPTION"\n' > ~/.env && chmod 600 ~/.env
+> ```
 >
 > **Security note**: This is a plaintext password protected only by file permissions (`-rw-------`). Since `~/` is shared via NFS, it works from both clusters. To remove it later, delete the file.
 
