@@ -73,6 +73,7 @@ Every SLURM experiment should be tracked with structured documentation. This ens
 - `/submit-experiment` — submit a SLURM experiment with proper naming, documentation, and cross-cluster support
 - `/harvest` — discover completed experiments, collect results, and update documentation
 - `/onboard` — set up a new lab member's Claude Code configuration
+- `/connect` — set up cross-cluster SSH (credentials, config, automation) and establish the connection
 
 **Agents** (Claude uses these automatically when relevant, or you can ask for them by name):
 - `slurm-queue` — show your active, pending, and recent jobs with status and quick actions
