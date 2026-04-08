@@ -148,9 +148,9 @@ After setup completes:
    If they do, append their content **below** the `<!-- END: lab-config -->` marker in `~/.claude/CLAUDE.md`.
 
 3. Ask if they want to customize `~/.claude/settings.local.json`:
-   - `skipDangerousModePermissionPrompt: true` — skips the safety prompt (experienced users only)
-   - Additional tool permissions beyond the defaults
-   - Any other preferences
+   - Default HPC permissions (git, sbatch, python, etc.) are already included in the shared config
+   - This file is for *extra* personal permissions beyond the lab defaults (e.g., `Bash(docker *)`)
+   - After editing, re-run `./setup.sh` to apply changes
 
 4. Remind them:
    - To update: `cd ~/lab-claude-config && git pull && ./setup.sh`

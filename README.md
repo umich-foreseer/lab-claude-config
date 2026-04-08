@@ -32,7 +32,7 @@ Run `./uninstall.sh` — removes symlinks, strips the lab config block from CLAU
 ~/.claude/
 ├── CLAUDE.md                  # Lab config injected between markers; your content outside markers is preserved
 ├── settings.json              # Generated from shared/settings.json + statusline path → symlinked
-├── settings.local.json        # Copied from template on first run; never overwritten (your permissions)
+├── settings.local.json        # Personal overrides (extra permissions, hooks); merged into settings.json during setup
 ├── statusline-command.sh      # Symlinked → shared/statusline-command.sh
 ├── skills/
 │   ├── harvest/               # Symlinked → shared/skills/harvest/

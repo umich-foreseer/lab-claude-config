@@ -210,8 +210,26 @@ info "Generating settings.json..."
 # Read shared settings and inject statusline with expanded $HOME
 SETTINGS_IN="$SCRIPT_DIR/shared/settings.json" \
 SETTINGS_OUT="$BUILD_DIR/settings.json" \
+SETTINGS_LOCAL="$CLAUDE_DIR/settings.local.json" \
 python3 -c "
-import json, os
+import json, os, sys
+
+def deep_merge(base, override):
+    '''Recursively merge override into base. Arrays are concatenated with dedup.'''
+    for key, val in override.items():
+        if key in base and isinstance(base[key], dict) and isinstance(val, dict):
+            deep_merge(base[key], val)
+        elif key in base and isinstance(base[key], list) and isinstance(val, list):
+            seen = set(json.dumps(x, sort_keys=True) if isinstance(x, (dict, list)) else x for x in base[key])
+            for item in val:
+                serialized = json.dumps(item, sort_keys=True) if isinstance(item, (dict, list)) else item
+                if serialized not in seen:
+                    base[key].append(item)
+                    seen.add(serialized)
+        else:
+            base[key] = val
+    return base
+
 with open(os.environ['SETTINGS_IN']) as f:
     settings = json.load(f)
 settings['statusLine'] = {
@@ -231,6 +249,18 @@ settings['hooks'] = {
         }
     ]
 }
+
+# Merge user's local overrides if they exist
+local_path = os.environ['SETTINGS_LOCAL']
+if os.path.isfile(local_path):
+    try:
+        with open(local_path) as f:
+            overrides = json.load(f)
+        deep_merge(settings, overrides)
+    except json.JSONDecodeError as e:
+        print(f'Error: {local_path} contains invalid JSON: {e}', file=sys.stderr)
+        sys.exit(1)
+
 with open(os.environ['SETTINGS_OUT'], 'w') as f:
     json.dump(settings, f, indent=2)
     f.write('\n')
@@ -455,7 +485,7 @@ echo "  CLAUDE.md: lab config injected between markers"
 echo "    Edit freely outside the <!-- BEGIN/END: lab-config --> markers."
 echo ""
 echo "  To customize:"
-echo "    - Edit ~/.claude/settings.local.json for personal permissions"
+echo "    - Edit ~/.claude/settings.local.json for extra permissions, then re-run: ./setup.sh"
 echo "    - Edit ~/.claude/CLAUDE.md — your content outside the markers is preserved"
 echo "    - Re-run ./setup.sh after git pull to pick up shared changes"
 echo ""

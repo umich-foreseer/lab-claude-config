@@ -1,20 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git *)",
-      "Bash(python *)",
-      "Bash(pip *)",
-      "Bash(conda *)",
-      "Bash(module *)",
-      "Bash(sinfo *)",
-      "Bash(squeue *)",
-      "Bash(sacct *)",
-      "Bash(sacctmgr *)",
-      "Bash(sbatch *)",
-      "Bash(srun *)",
-      "Bash(salloc *)",
-      "Bash(scancel *)",
-      "Bash(nvidia-smi *)"
+      "Bash(docker *)"
     ]
   }
 }

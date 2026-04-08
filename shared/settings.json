@@ -1,4 +1,27 @@
 {
   "showThinkingSummaries": true,
-  "alwaysThinkingEnabled": true
+  "alwaysThinkingEnabled": true,
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(python *)",
+      "Bash(pip *)",
+      "Bash(conda *)",
+      "Bash(module *)",
+      "Bash(sinfo *)",
+      "Bash(squeue *)",
+      "Bash(sacct *)",
+      "Bash(sacctmgr *)",
+      "Bash(sbatch *)",
+      "Bash(srun *)",
+      "Bash(salloc *)",
+      "Bash(scancel *)",
+      "Bash(nvidia-smi *)",
+      "Bash(which *)",
+      "Bash(hostname)",
+      "Bash(df *)",
+      "Bash(du *)",
+      "Bash(quota*)"
+    ]
+  }
 }
