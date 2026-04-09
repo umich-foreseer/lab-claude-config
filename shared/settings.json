@@ -18,10 +18,10 @@
       "Bash(scancel *)",
       "Bash(nvidia-smi *)",
       "Bash(which *)",
-      "Bash(hostname)",
+      "Bash(hostname *)",
       "Bash(df *)",
       "Bash(du *)",
-      "Bash(quota*)"
+      "Bash(quota *)"
     ]
   }
 }
