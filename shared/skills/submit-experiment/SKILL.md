@@ -214,7 +214,7 @@ Print:
 
 ## Tip: Enforcing submission discipline
 
-Projects can add a PreToolUse hook to `settings.local.json` that reminds users to use `/submit-experiment` instead of direct `sbatch`:
+Projects can add a PreToolUse hook to `~/.claude/settings.local.json` that reminds users to use `/submit-experiment` instead of direct `sbatch`. After editing, re-run `./setup.sh` to apply:
 
 ```json
 {
