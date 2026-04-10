@@ -10,7 +10,26 @@ model_name=$(echo "$input" | jq -r '.model.display_name' | sed 's/ ([^)]*context
 used_pct=$(echo "$input" | jq -r '.context_window.used_percentage // empty')
 cost_usd=$(echo "$input" | jq -r '.cost.total_cost_usd // empty')
 rate_5h=$(echo "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty')
-effort="${CLAUDE_CODE_EFFORT_LEVEL:-auto}"
+# Effort: env var first, then settings chain, then default
+if [ -n "$CLAUDE_CODE_EFFORT_LEVEL" ]; then
+    effort="$CLAUDE_CODE_EFFORT_LEVEL"
+else
+    effort=""
+    for f in \
+        "${current_dir}/.claude/settings.local.json" \
+        "${current_dir}/.claude/settings.json" \
+        "$HOME/.claude/settings.local.json" \
+        "$HOME/.claude/settings.json"; do
+        if [ -f "$f" ]; then
+            val=$(jq -r '.effortLevel // empty' "$f" 2>/dev/null)
+            if [ -n "$val" ]; then
+                effort="$val"
+                break
+            fi
+        fi
+    done
+    effort="${effort:-medium}"
+fi
 dir_basename=$(basename "$current_dir")
 
 # Continuous color: lerp through green(136,192,145) → gold(222,196,132) → red(226,135,135)
