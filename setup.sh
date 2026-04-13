@@ -244,8 +244,31 @@ settings['hooks'] = {
                 {
                     'type': 'command',
                     'command': f'bash {os.environ[\"HOME\"]}/.claude/hooks/node-context.sh'
+                },
+                {
+                    'type': 'command',
+                    'command': f'bash {os.environ[\"HOME\"]}/.claude/hooks/block-login-python.sh',
+                    'timeout': 5
                 }
             ]
+        }
+    ],
+    'PostToolUse': [
+        {
+            'matcher': 'Edit',
+            'hooks': [{'type': 'command', 'command': 'case \"\$CLAUDE_FILE_PATH\" in *.py) ruff check --fix \"\$CLAUDE_FILE_PATH\" ;; esac'}]
+        },
+        {
+            'matcher': 'Write',
+            'hooks': [{'type': 'command', 'command': 'case \"\$CLAUDE_FILE_PATH\" in *.py) ruff check --fix \"\$CLAUDE_FILE_PATH\" ;; esac'}]
+        },
+        {
+            'matcher': 'Edit',
+            'hooks': [{'type': 'command', 'command': 'case \"\$CLAUDE_FILE_PATH\" in */submit*.sh) bash -n \"\$CLAUDE_FILE_PATH\" && echo \"SLURM script syntax OK\" ;; esac'}]
+        },
+        {
+            'matcher': 'Write',
+            'hooks': [{'type': 'command', 'command': 'case \"\$CLAUDE_FILE_PATH\" in */submit*.sh) bash -n \"\$CLAUDE_FILE_PATH\" && echo \"SLURM script syntax OK\" ;; esac'}]
         }
     ]
 }
@@ -432,12 +455,6 @@ if [[ -d "$SCRIPT_DIR/shared/agents" ]]; then
             create_symlink "$agent_file" "$CLAUDE_DIR/agents/$agent_name"
         fi
     done
-fi
-
-# --- Copy settings.local.json.example if needed ---
-if [[ ! -f "$CLAUDE_DIR/settings.local.json" ]]; then
-    cp "$SCRIPT_DIR/templates/settings.local.json.example" "$CLAUDE_DIR/settings.local.json"
-    ok "Created settings.local.json from template (edit to customize permissions)"
 fi
 
 # --- Summary ---
