@@ -87,42 +87,11 @@ Run `./uninstall.sh` — removes symlinks, strips the lab config block from CLAU
 
 ## Shell helpers (opt-in)
 
-### `claude-in-slurm` — auto-route `claude` into a SLURM allocation
+Optional shell snippets you can source from your `~/.bashrc` / `~/.zshrc`. Not installed automatically — see [`shared/shell/README.md`](shared/shell/README.md) for details.
 
-Running Claude Code on a login node is against compute discipline. Sourcing `shared/shell/claude-in-slurm.sh` defines a `claude` shell function that:
-
-1. If you're already inside a SLURM allocation → runs `claude` directly.
-2. Otherwise, looks for a running **interactive** allocation you own and attaches via `srun --overlap --jobid=<id> --pty`. On Great Lakes, GPU jobs are skipped so `claude` never piggybacks on a training job. On Lighthouse, GPU jobs are accepted since the lab only has GPU partitions there.
-3. If none exists (Great Lakes only), runs `srun --pty` with a sensible CPU default (`qmei0` / `standard`, 4 CPU / 32G / 8h) to allocate a fresh compute node and launch `claude` on it. `srun` blocks until the allocation is granted, so the prompt "waits" automatically. (We use `srun`, not `salloc <cmd>`, because Great Lakes does not set `SallocDefaultCommand` — `salloc <cmd>` would run the command on the login node while the allocation sat idle.)
-4. On Lighthouse (GPU-only for this lab), auto-launch is disabled — if you don't already have an allocation, it falls back to the login node with a warning.
-
-The script is **polyglot** — it works when sourced by either bash or zsh, so you just pick the right hook file for your shell.
-
-**Enable** (opt-in, no `setup.sh` changes):
-
-| Your shell setup | Hook file | Command |
-|---|---|---|
-| Pure bash | `~/.bashrc` | `echo '. ~/lab-claude-config/shared/shell/claude-in-slurm.sh' >> ~/.bashrc` |
-| Pure zsh | `~/.zshrc` | `echo '. ~/lab-claude-config/shared/shell/claude-in-slurm.sh' >> ~/.zshrc` |
-| Dotfiles with a `.local` override pattern (recommended if available) | `~/.zshrc.local` | Add the source line to `~/.zshrc.local` so it stays out of your tracked dotfiles |
-| Bash that `exec`s zsh for interactive shells | `~/.zshrc` (not `~/.bashrc`) | Appending to `~/.bashrc` won't work — the exec to zsh happens first. Hook zsh directly. |
-
-Open a new shell and run `claude` normally. The function is a no-op on compute nodes and unknown hosts, so sourcing it unconditionally is safe.
-
-**Override defaults** by exporting before sourcing (or directly in your rc file):
-
-```bash
-export CLAUDE_IN_SLURM_CPUS=8
-export CLAUDE_IN_SLURM_MEM=64G
-export CLAUDE_IN_SLURM_TIME=12:00:00
-export CLAUDE_IN_SLURM_DISABLE=1   # turn off entirely
-```
-
-**Notes:**
-- "Interactive" means allocations with `BatchFlag=0` (i.e., `salloc`- or `srun --pty`-style). Batch `sbatch` jobs are intentionally skipped so the wrapper never piggybacks on a running training job.
-- On Great Lakes, GPU jobs are skipped when searching for existing allocations. On Lighthouse, GPU jobs are accepted since the lab only has access to GPU partitions (`qmei-a100`) there.
-- The Great Lakes default uses `GL_ACCOUNT_GENERAL` from `build/.env.local` (populated by `setup.sh` during `/onboard`), falling back to `qmei0` if unset.
-- Lighthouse CPU defaults aren't configured because this lab only has access to the `qmei-a100` GPU partition there. If that changes, extend `_cis_alloc_args` in the script.
+| Helper | Description |
+|--------|-------------|
+| `claude-in-slurm.sh` | Wraps the `claude` command so it launches inside a SLURM compute allocation instead of on the login node (attaches to an existing interactive alloc or auto-launches a fresh one). |
 
 ## Contributing
 
