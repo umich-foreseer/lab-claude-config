@@ -1,7 +1,7 @@
 {
   "showThinkingSummaries": true,
   "alwaysThinkingEnabled": true,
-  "effortLevel": "high",
+  "effortLevel": "xhigh",
   "permissions": {
     "allow": [
       "Bash(git *)",
