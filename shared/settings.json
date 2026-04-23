@@ -1,7 +1,7 @@
 {
   "showThinkingSummaries": true,
   "alwaysThinkingEnabled": true,
-  "effortLevel": "high",
+  "effortLevel": "xhigh",
   "autoMode": {
     "environment": [
       "**Trusted repo**: The git repository the agent started in (its working directory) and its configured remote(s)",
