@@ -2,6 +2,29 @@
   "showThinkingSummaries": true,
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
+  "autoMode": {
+    "environment": [
+      "Shared HPC (University of Michigan Great Lakes / Lighthouse).",
+      "Login nodes (hostname matches gl-login* or lh-login*) have only ~2 CPU and ~4 GB RAM and are NOT for running workloads — they exist for editing, submitting jobs, and lightweight inspection.",
+      "SLURM_JOB_ID being set means the current shell is inside a compute allocation, where arbitrary workloads are fine.",
+      "The PreToolUse hook shared/hooks/node-context.sh injects the current hostname and SLURM_JOB_ID before each Bash call — use those to decide whether the request is on a login node."
+    ],
+    "soft_deny": [
+      "On a login node (SLURM_JOB_ID unset AND hostname matches gl-login*/lh-login*), do not run any Bash command that would consume non-trivial CPU, RAM, GPU, or sustained I/O. The rule is semantic, not syntactic — judge by resource cost, not by binary name.",
+      "Refuse on a login node: executing user code (python, pytest, torchrun, jupyter, node, Rscript, julia, matlab, compiled binaries that do real work), training or inference, data processing or large transforms, large archive extraction, rsync/cp of >1 GB, compilation of large codebases, anything that would pin a CPU for more than a few seconds or allocate more than a few hundred MB of RAM.",
+      "When in doubt on a login node, tell the user to wrap the command in srun/sbatch/salloc or to salloc an interactive shell first."
+    ],
+    "allow": [
+      "On a login node, version/identity probes are fine: python -V, node --version, which X, type X, command -v X.",
+      "On a login node, package management is fine: pip/uv/conda/pipx/npm install|sync|lock|list|show|freeze|add|remove, and virtualenv/conda env creation.",
+      "On a login node, Slurm control commands are fine: sinfo, squeue, sacct, scancel, sbatch, srun, salloc, scontrol.",
+      "On a login node, small-scale file inspection is fine: ls, cat, head, tail, wc, stat, find with reasonable scope, grep/rg over <1 GB.",
+      "On a login node, git operations, editing files, reading logs, and small (<5 s, <100 MB RAM) shell/awk/sed pipelines for formatting or config generation are fine.",
+      "On a login node, anything dispatched off-node via srun/sbatch/salloc or ssh to another host is fine.",
+      "On a login node, the project launcher `[uv run] python -m configs.training.submit` is fine — it only dispatches Slurm jobs and does not train locally.",
+      "Inside a SLURM allocation (SLURM_JOB_ID set) or on a laptop (hostname does not match gl-login*/lh-login*), the login-node restriction does not apply — run what you need."
+    ]
+  },
   "permissions": {
     "allow": [
       "Bash(git *)",

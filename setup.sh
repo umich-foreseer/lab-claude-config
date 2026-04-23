@@ -244,11 +244,6 @@ settings['hooks'] = {
                 {
                     'type': 'command',
                     'command': f'bash {os.environ[\"HOME\"]}/.claude/hooks/node-context.sh'
-                },
-                {
-                    'type': 'command',
-                    'command': f'bash {os.environ[\"HOME\"]}/.claude/hooks/block-login-python.sh',
-                    'timeout': 5
                 }
             ]
         }
