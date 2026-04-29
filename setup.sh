@@ -235,12 +235,18 @@ save_env
 backup_if_exists() {
     local target="$1"
     local backup_dir="${2:-$BACKUP_DIR}"
-    if [[ -e "$target" && ! -L "$target" ]]; then
+    local backup_target="$target"
+
+    if [[ -L "$target" ]]; then
+        backup_target="$(readlink -f "$target")"
+    fi
+
+    if [[ -e "$backup_target" ]]; then
         mkdir -p "$backup_dir"
         local basename
-        basename="$(basename "$target")"
-        cp -a "$target" "$backup_dir/${basename}.$(date +%Y%m%d%H%M%S)"
-        info "Backed up $target"
+        basename="$(basename "$backup_target")"
+        cp -a "$backup_target" "$backup_dir/${basename}.$(date +%Y%m%d%H%M%S)"
+        info "Backed up $backup_target"
     fi
 }
 
@@ -389,25 +395,30 @@ inject_marked_block() {
     local target_file="$1"
     local block="$2"
     local doc_label="$3"
+    local write_file="$target_file"
 
-    if [[ ! -f "$target_file" ]]; then
-        echo "$block" > "$target_file"
+    if [[ -L "$target_file" ]]; then
+        write_file="$(readlink -f "$target_file")"
+    fi
+
+    if [[ ! -f "$write_file" ]]; then
+        echo "$block" > "$write_file"
         ok "Created $doc_label with lab config"
-    elif grep -qF "$BEGIN_MARKER" "$target_file"; then
+    elif grep -qF "$BEGIN_MARKER" "$write_file"; then
         awk -v begin="$BEGIN_MARKER" -v end="$END_MARKER" -v block="$block" '
             $0 == begin { print block; skip=1; next }
             $0 == end   { skip=0; next }
             !skip       { print }
-        ' "$target_file" > "$target_file.tmp"
-        mv "$target_file.tmp" "$target_file"
+        ' "$write_file" > "$write_file.tmp"
+        mv "$write_file.tmp" "$write_file"
         ok "Updated lab config block in $doc_label"
     else
         {
             echo "$block"
             echo ""
-            cat "$target_file"
-        } > "$target_file.tmp"
-        mv "$target_file.tmp" "$target_file"
+            cat "$write_file"
+        } > "$write_file.tmp"
+        mv "$write_file.tmp" "$write_file"
         ok "Prepended lab config block to existing $doc_label"
     fi
 }
