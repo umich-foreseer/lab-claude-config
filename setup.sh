@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Lab-wide Claude Code configuration installer
-# Usage: ./setup.sh [--modules greatlakes,lighthouse] [--non-interactive]
+# Lab-wide Claude Code / Codex configuration installer
+# Usage: ./setup.sh [--modules greatlakes,lighthouse] [--targets claude,codex] [--non-interactive]
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLAUDE_DIR="$HOME/.claude"
+CODEX_DIR="$HOME/.codex"
 BUILD_DIR="$SCRIPT_DIR/build"
 BACKUP_DIR="$CLAUDE_DIR/backups/lab-config-backup"
+CODEX_BACKUP_DIR="$CODEX_DIR/backups/lab-config-backup"
 ENV_FILE="$BUILD_DIR/.env.local"
 
 # Colors
@@ -24,6 +26,7 @@ err()   { echo -e "${RED}[ERR ]${NC} $*" >&2; }
 
 # --- Parse arguments ---
 MODULES=""
+TARGETS="claude"
 NON_INTERACTIVE=false
 
 while [[ $# -gt 0 ]]; do
@@ -32,16 +35,31 @@ while [[ $# -gt 0 ]]; do
             MODULES="$2"
             shift 2
             ;;
+        --targets)
+            TARGETS="$2"
+            shift 2
+            ;;
+        --codex)
+            TARGETS="codex"
+            shift
+            ;;
+        --both)
+            TARGETS="claude,codex"
+            shift
+            ;;
         --non-interactive)
             NON_INTERACTIVE=true
             shift
             ;;
         -h|--help)
-            echo "Usage: $0 [--modules greatlakes,lighthouse|none] [--non-interactive]"
+            echo "Usage: $0 [--modules greatlakes,lighthouse|none] [--targets claude,codex] [--non-interactive]"
             echo ""
             echo "Options:"
             echo "  --modules           Comma-separated list of modules to enable (greatlakes,lighthouse,none)"
             echo "                      If not specified, auto-detects based on hostname"
+            echo "  --targets           Comma-separated tools to configure (claude,codex). Default: claude"
+            echo "  --codex             Shortcut for --targets codex"
+            echo "  --both              Shortcut for --targets claude,codex"
             echo "  --non-interactive   Skip prompts, use saved values from .env.local or defaults"
             exit 0
             ;;
@@ -83,22 +101,46 @@ fi
 
 # Parse modules into array
 IFS=',' read -ra MODULE_LIST <<< "$MODULES"
+IFS=',' read -ra TARGET_LIST <<< "$TARGETS"
 
 info "Modules to enable: ${MODULE_LIST[*]}"
+info "Targets to configure: ${TARGET_LIST[*]}"
+
+target_enabled() {
+    local wanted="$1"
+    for target in "${TARGET_LIST[@]}"; do
+        [[ "$target" == "$wanted" ]] && return 0
+    done
+    return 1
+}
+
+for target in "${TARGET_LIST[@]}"; do
+    case "$target" in
+        claude|codex) ;;
+        *)
+            err "Unknown target: $target"
+            exit 1
+            ;;
+    esac
+done
 
 # --- Check dependencies ---
-if ! command -v python3 &>/dev/null; then
+if target_enabled claude && ! command -v python3 &>/dev/null; then
     err "python3 is required but not found. Load it with 'module load python' or install it."
     exit 1
 fi
-if ! command -v jq &>/dev/null; then
+if target_enabled claude && ! command -v jq &>/dev/null; then
     err "jq is required (for the statusline) but not found. Load it with 'module load jq' or install it."
     exit 1
 fi
 
-# --- Ensure ~/.claude exists ---
-if [[ ! -d "$CLAUDE_DIR" ]]; then
+# --- Ensure target config directories exist ---
+if target_enabled claude && [[ ! -d "$CLAUDE_DIR" ]]; then
     err "~/.claude does not exist. Please run 'claude' at least once first."
+    exit 1
+fi
+if target_enabled codex && [[ ! -d "$CODEX_DIR" ]]; then
+    err "~/.codex does not exist. Please run 'codex' at least once first."
     exit 1
 fi
 
@@ -192,26 +234,33 @@ save_env
 # --- Backup existing files ---
 backup_if_exists() {
     local target="$1"
+    local backup_dir="${2:-$BACKUP_DIR}"
     if [[ -e "$target" && ! -L "$target" ]]; then
-        mkdir -p "$BACKUP_DIR"
+        mkdir -p "$backup_dir"
         local basename
         basename="$(basename "$target")"
-        cp -a "$target" "$BACKUP_DIR/${basename}.$(date +%Y%m%d%H%M%S)"
+        cp -a "$target" "$backup_dir/${basename}.$(date +%Y%m%d%H%M%S)"
         info "Backed up $target"
     fi
 }
 
-backup_if_exists "$CLAUDE_DIR/settings.json"
-backup_if_exists "$CLAUDE_DIR/statusline-command.sh"
+if target_enabled claude; then
+    backup_if_exists "$CLAUDE_DIR/settings.json"
+    backup_if_exists "$CLAUDE_DIR/statusline-command.sh"
+fi
+if target_enabled codex; then
+    backup_if_exists "$CODEX_DIR/AGENTS.md" "$CODEX_BACKUP_DIR"
+fi
 
 # --- Generate build/settings.json ---
-info "Generating settings.json..."
+if target_enabled claude; then
+    info "Generating settings.json..."
 
-# Read shared settings and inject statusline with expanded $HOME
-SETTINGS_IN="$SCRIPT_DIR/shared/settings.json" \
-SETTINGS_OUT="$BUILD_DIR/settings.json" \
-SETTINGS_LOCAL="$CLAUDE_DIR/settings.local.json" \
-python3 -c "
+    # Read shared settings and inject statusline with expanded $HOME
+    SETTINGS_IN="$SCRIPT_DIR/shared/settings.json" \
+    SETTINGS_OUT="$BUILD_DIR/settings.json" \
+    SETTINGS_LOCAL="$CLAUDE_DIR/settings.local.json" \
+    python3 -c "
 import json, os, sys
 
 def deep_merge(base, override):
@@ -283,21 +332,33 @@ with open(os.environ['SETTINGS_OUT'], 'w') as f:
     json.dump(settings, f, indent=2)
     f.write('\n')
 "
-ok "Generated build/settings.json"
+    ok "Generated build/settings.json"
+fi
 
 # --- Inject lab config into ~/.claude/CLAUDE.md ---
-CLAUDE_MD="$CLAUDE_DIR/CLAUDE.md"
 BEGIN_MARKER="<!-- BEGIN: lab-config -->"
 END_MARKER="<!-- END: lab-config -->"
 
-info "Injecting lab config into CLAUDE.md..."
+expand_vars() {
+    local content="$1"
+    for key in "${!ENV_VARS[@]}"; do
+        content="${content//\{\{$key\}\}/${ENV_VARS[$key]}}"
+    done
+    echo "$content"
+}
 
-# Build the lab config block
-lab_block="$BEGIN_MARKER
-$(cat "$SCRIPT_DIR/shared/CLAUDE.md")
+build_doc_block() {
+    local shared_doc="$1"
+    local module_doc_name="$2"
+
+    local block="$BEGIN_MARKER
+$(cat "$shared_doc")
 $(
     for module in "${MODULE_LIST[@]}"; do
-        if [[ "$module" != "none" && -f "$SCRIPT_DIR/modules/$module/CLAUDE.md" ]]; then
+        if [[ "$module" != "none" && -f "$SCRIPT_DIR/modules/$module/$module_doc_name" ]]; then
+            echo ""
+            cat "$SCRIPT_DIR/modules/$module/$module_doc_name"
+        elif [[ "$module_doc_name" == "AGENTS.md" && "$module" != "none" && -f "$SCRIPT_DIR/modules/$module/CLAUDE.md" ]]; then
             echo ""
             cat "$SCRIPT_DIR/modules/$module/CLAUDE.md"
         fi
@@ -305,34 +366,46 @@ $(
 )
 $END_MARKER"
 
-# Expand {{VAR}} placeholders in lab_block with saved template variables
-for key in "${!ENV_VARS[@]}"; do
-    lab_block="${lab_block//\{\{$key\}\}/${ENV_VARS[$key]}}"
-done
+    expand_vars "$block"
+}
 
-if [[ ! -f "$CLAUDE_MD" ]]; then
-    # No existing CLAUDE.md — create one with just the lab block
-    echo "$lab_block" > "$CLAUDE_MD"
-    ok "Created CLAUDE.md with lab config"
-elif grep -qF "$BEGIN_MARKER" "$CLAUDE_MD"; then
-    # Markers exist — replace content between them
-    # Use awk to replace everything between BEGIN and END markers (inclusive)
-    awk -v begin="$BEGIN_MARKER" -v end="$END_MARKER" -v block="$lab_block" '
-        $0 == begin { print block; skip=1; next }
-        $0 == end   { skip=0; next }
-        !skip       { print }
-    ' "$CLAUDE_MD" > "$CLAUDE_MD.tmp"
-    mv "$CLAUDE_MD.tmp" "$CLAUDE_MD"
-    ok "Updated lab config block in CLAUDE.md"
-else
-    # No markers — prepend lab block to existing content
-    {
-        echo "$lab_block"
-        echo ""
-        cat "$CLAUDE_MD"
-    } > "$CLAUDE_MD.tmp"
-    mv "$CLAUDE_MD.tmp" "$CLAUDE_MD"
-    ok "Prepended lab config block to existing CLAUDE.md"
+inject_marked_block() {
+    local target_file="$1"
+    local block="$2"
+    local doc_label="$3"
+
+    if [[ ! -f "$target_file" ]]; then
+        echo "$block" > "$target_file"
+        ok "Created $doc_label with lab config"
+    elif grep -qF "$BEGIN_MARKER" "$target_file"; then
+        awk -v begin="$BEGIN_MARKER" -v end="$END_MARKER" -v block="$block" '
+            $0 == begin { print block; skip=1; next }
+            $0 == end   { skip=0; next }
+            !skip       { print }
+        ' "$target_file" > "$target_file.tmp"
+        mv "$target_file.tmp" "$target_file"
+        ok "Updated lab config block in $doc_label"
+    else
+        {
+            echo "$block"
+            echo ""
+            cat "$target_file"
+        } > "$target_file.tmp"
+        mv "$target_file.tmp" "$target_file"
+        ok "Prepended lab config block to existing $doc_label"
+    fi
+}
+
+if target_enabled claude; then
+    info "Injecting lab config into CLAUDE.md..."
+    CLAUDE_MD="$CLAUDE_DIR/CLAUDE.md"
+    inject_marked_block "$CLAUDE_MD" "$(build_doc_block "$SCRIPT_DIR/shared/CLAUDE.md" "CLAUDE.md")" "CLAUDE.md"
+fi
+
+if target_enabled codex; then
+    info "Injecting lab config into AGENTS.md..."
+    CODEX_AGENTS_MD="$CODEX_DIR/AGENTS.md"
+    inject_marked_block "$CODEX_AGENTS_MD" "$(build_doc_block "$SCRIPT_DIR/shared/AGENTS.md" "AGENTS.md")" "AGENTS.md"
 fi
 
 # --- Generate skill files from templates ---
@@ -353,10 +426,17 @@ expand_template() {
     echo "$content" > "$output"
 }
 
+# Clear Codex-generated agent skill outputs when configuring Codex so stale
+# generated files cannot survive a setup run.
+if target_enabled codex; then
+    rm -rf "$BUILD_DIR/codex/skills"
+fi
+
 # Determine which slurm-status template to use.
 # If both greatlakes and lighthouse are active, use the combined template.
 _has_gl=false
 _has_lh=false
+SLURM_STATUS_GENERATED=false
 for module in "${MODULE_LIST[@]}"; do
     [[ "$module" == "greatlakes" ]] && _has_gl=true
     [[ "$module" == "lighthouse" ]] && _has_lh=true
@@ -369,6 +449,7 @@ if $_has_gl && $_has_lh; then
         expand_template \
             "$SCRIPT_DIR/modules/combined/skills/slurm-status/SKILL.md.template" \
             "$BUILD_DIR/skills/slurm-status/SKILL.md"
+        SLURM_STATUS_GENERATED=true
         ok "Generated combined slurm-status skill"
     fi
 elif $_has_gl; then
@@ -378,6 +459,7 @@ elif $_has_gl; then
         expand_template \
             "$SCRIPT_DIR/modules/greatlakes/skills/slurm-status/SKILL.md.template" \
             "$BUILD_DIR/skills/slurm-status/SKILL.md"
+        SLURM_STATUS_GENERATED=true
         ok "Generated slurm-status skill"
     fi
 elif $_has_lh; then
@@ -387,6 +469,7 @@ elif $_has_lh; then
         expand_template \
             "$SCRIPT_DIR/modules/lighthouse/skills/slurm-status/SKILL.md.template" \
             "$BUILD_DIR/skills/slurm-status/SKILL.md"
+        SLURM_STATUS_GENERATED=true
         ok "Generated slurm-status skill"
     fi
 fi
@@ -395,12 +478,17 @@ fi
 create_symlink() {
     local source="$1"
     local target="$2"
+    local backup_dir="$BACKUP_DIR"
+
+    if [[ "$target" == "$CODEX_DIR/"* ]]; then
+        backup_dir="$CODEX_BACKUP_DIR"
+    fi
 
     if [[ -L "$target" ]]; then
         rm "$target"
     elif [[ -e "$target" ]]; then
-        backup_if_exists "$target"
-        rm -f "$target"
+        backup_if_exists "$target" "$backup_dir"
+        rm -rf "$target"
     fi
 
     mkdir -p "$(dirname "$target")"
@@ -408,96 +496,198 @@ create_symlink() {
     ok "Linked $target -> $source"
 }
 
-create_symlink "$BUILD_DIR/settings.json" "$CLAUDE_DIR/settings.json"
-create_symlink "$SCRIPT_DIR/shared/statusline-command.sh" "$CLAUDE_DIR/statusline-command.sh"
-
-# Symlink generated skill directories (e.g. slurm-status)
-if [[ -d "$BUILD_DIR/skills/slurm-status" ]]; then
-    create_symlink "$BUILD_DIR/skills/slurm-status" "$CLAUDE_DIR/skills/slurm-status"
-fi
-
-# Symlink shared hook files (individual files, not the whole directory,
-# to preserve any user-created hooks already in ~/.claude/hooks/)
-if [[ -d "$SCRIPT_DIR/shared/hooks" ]]; then
-    # Remove old directory-level symlink from previous setup versions
-    if [[ -L "$CLAUDE_DIR/hooks" ]]; then
-        rm "$CLAUDE_DIR/hooks"
+remove_repo_symlink_if_present() {
+    local target="$1"
+    if [[ -L "$target" ]]; then
+        local link_dest
+        link_dest="$(readlink -f "$target" 2>/dev/null || true)"
+        if [[ ! -e "$target" || "$link_dest" == "$SCRIPT_DIR/"* ]]; then
+            rm "$target"
+            ok "Removed stale symlink: $target"
+        fi
     fi
-    mkdir -p "$CLAUDE_DIR/hooks"
-    for hook_file in "$SCRIPT_DIR/shared/hooks"/*; do
-        if [[ -f "$hook_file" ]]; then
-            hook_name="$(basename "$hook_file")"
-            create_symlink "$hook_file" "$CLAUDE_DIR/hooks/$hook_name"
+}
+
+if target_enabled claude; then
+    create_symlink "$BUILD_DIR/settings.json" "$CLAUDE_DIR/settings.json"
+    create_symlink "$SCRIPT_DIR/shared/statusline-command.sh" "$CLAUDE_DIR/statusline-command.sh"
+
+    # Symlink generated skill directories (e.g. slurm-status)
+    if [[ "$SLURM_STATUS_GENERATED" == true ]]; then
+        create_symlink "$BUILD_DIR/skills/slurm-status" "$CLAUDE_DIR/skills/slurm-status"
+    else
+        remove_repo_symlink_if_present "$CLAUDE_DIR/skills/slurm-status"
+    fi
+
+    # Symlink shared hook files (individual files, not the whole directory,
+    # to preserve any user-created hooks already in ~/.claude/hooks/)
+    if [[ -d "$SCRIPT_DIR/shared/hooks" ]]; then
+        # Remove old directory-level symlink from previous setup versions
+        if [[ -L "$CLAUDE_DIR/hooks" ]]; then
+            rm "$CLAUDE_DIR/hooks"
         fi
-    done
+        mkdir -p "$CLAUDE_DIR/hooks"
+        for hook_file in "$SCRIPT_DIR/shared/hooks"/*; do
+            if [[ -f "$hook_file" ]]; then
+                hook_name="$(basename "$hook_file")"
+                create_symlink "$hook_file" "$CLAUDE_DIR/hooks/$hook_name"
+            fi
+        done
+    fi
+
+    # Symlink shared skills directory contents
+    if [[ -d "$SCRIPT_DIR/shared/skills" ]]; then
+        for skill_dir in "$SCRIPT_DIR/shared/skills"/*/; do
+            if [[ -d "$skill_dir" ]]; then
+                skill_name="$(basename "$skill_dir")"
+                create_symlink "$skill_dir" "$CLAUDE_DIR/skills/$skill_name"
+            fi
+        done
+    fi
+
+    # Symlink shared agents
+    if [[ -d "$SCRIPT_DIR/shared/agents" ]]; then
+        for agent_file in "$SCRIPT_DIR/shared/agents"/*.md; do
+            if [[ -f "$agent_file" ]]; then
+                agent_name="$(basename "$agent_file")"
+                create_symlink "$agent_file" "$CLAUDE_DIR/agents/$agent_name"
+            fi
+        done
+    fi
 fi
 
-# Symlink shared skills directory contents
-if [[ -d "$SCRIPT_DIR/shared/skills" ]]; then
-    for skill_dir in "$SCRIPT_DIR/shared/skills"/*/; do
-        if [[ -d "$skill_dir" ]]; then
-            skill_name="$(basename "$skill_dir")"
-            create_symlink "$skill_dir" "$CLAUDE_DIR/skills/$skill_name"
-        fi
-    done
-fi
+if target_enabled codex; then
+    declare -A CODEX_SKILL_OVERRIDES=()
 
-# Symlink shared agents
-if [[ -d "$SCRIPT_DIR/shared/agents" ]]; then
-    for agent_file in "$SCRIPT_DIR/shared/agents"/*.md; do
-        if [[ -f "$agent_file" ]]; then
-            agent_name="$(basename "$agent_file")"
-            create_symlink "$agent_file" "$CLAUDE_DIR/agents/$agent_name"
-        fi
-    done
+    if [[ -d "$SCRIPT_DIR/shared/codex/skills" ]]; then
+        for skill_dir in "$SCRIPT_DIR/shared/codex/skills"/*/; do
+            if [[ -d "$skill_dir" ]]; then
+                skill_name="$(basename "$skill_dir")"
+                CODEX_SKILL_OVERRIDES["$skill_name"]=1
+                create_symlink "$skill_dir" "$CODEX_DIR/skills/$skill_name"
+            fi
+        done
+    fi
+
+    if [[ "$SLURM_STATUS_GENERATED" == true ]]; then
+        create_symlink "$BUILD_DIR/skills/slurm-status" "$CODEX_DIR/skills/slurm-status"
+        CODEX_SKILL_OVERRIDES["slurm-status"]=1
+    else
+        remove_repo_symlink_if_present "$CODEX_DIR/skills/slurm-status"
+    fi
+
+    if [[ -d "$SCRIPT_DIR/shared/skills" ]]; then
+        for skill_dir in "$SCRIPT_DIR/shared/skills"/*/; do
+            if [[ -d "$skill_dir" ]]; then
+                skill_name="$(basename "$skill_dir")"
+                if [[ -z "${CODEX_SKILL_OVERRIDES[$skill_name]:-}" ]]; then
+                    create_symlink "$skill_dir" "$CODEX_DIR/skills/$skill_name"
+                fi
+            fi
+        done
+    fi
+
+    if [[ -d "$SCRIPT_DIR/shared/agents" ]]; then
+        for agent_file in "$SCRIPT_DIR/shared/agents"/*.md; do
+            if [[ -f "$agent_file" ]]; then
+                agent_name="$(basename "$agent_file" .md)"
+                mkdir -p "$BUILD_DIR/codex/skills/$agent_name"
+                cp "$agent_file" "$BUILD_DIR/codex/skills/$agent_name/SKILL.md"
+                create_symlink "$BUILD_DIR/codex/skills/$agent_name" "$CODEX_DIR/skills/$agent_name"
+            fi
+        done
+    fi
 fi
 
 # --- Summary ---
 echo ""
 echo -e "${GREEN}============================================${NC}"
-echo -e "${GREEN} Lab Claude Config installed successfully!${NC}"
+echo -e "${GREEN} Lab AI coding config installed successfully!${NC}"
 echo -e "${GREEN}============================================${NC}"
 echo ""
 echo "  Modules enabled: ${MODULE_LIST[*]}"
+echo "  Targets enabled: ${TARGET_LIST[*]}"
 echo "  Config repo:     $SCRIPT_DIR"
 echo "  Build dir:       $BUILD_DIR"
 echo ""
-echo "  Symlinks created:"
-echo "    ~/.claude/settings.json        -> build/settings.json"
-echo "    ~/.claude/statusline-command.sh -> shared/statusline-command.sh"
-if [[ -d "$BUILD_DIR/skills/slurm-status" ]]; then
-    echo "    ~/.claude/skills/slurm-status  -> build/skills/slurm-status"
+if target_enabled claude; then
+    echo "  Claude symlinks created:"
+    echo "    ~/.claude/settings.json         -> build/settings.json"
+    echo "    ~/.claude/statusline-command.sh -> shared/statusline-command.sh"
+    if [[ "$SLURM_STATUS_GENERATED" == true ]]; then
+        echo "    ~/.claude/skills/slurm-status   -> build/skills/slurm-status"
+    fi
+    if [[ -d "$SCRIPT_DIR/shared/hooks" ]]; then
+        for hook_file in "$SCRIPT_DIR/shared/hooks"/*; do
+            if [[ -f "$hook_file" ]]; then
+                hook_name="$(basename "$hook_file")"
+                echo "    ~/.claude/hooks/$hook_name -> shared/hooks/$hook_name"
+            fi
+        done
+    fi
+    if [[ -d "$SCRIPT_DIR/shared/skills" ]]; then
+        for skill_dir in "$SCRIPT_DIR/shared/skills"/*/; do
+            if [[ -d "$skill_dir" ]]; then
+                skill_name="$(basename "$skill_dir")"
+                echo "    ~/.claude/skills/$skill_name -> shared/skills/$skill_name"
+            fi
+        done
+    fi
+    if [[ -d "$SCRIPT_DIR/shared/agents" ]]; then
+        for agent_file in "$SCRIPT_DIR/shared/agents"/*.md; do
+            if [[ -f "$agent_file" ]]; then
+                agent_name="$(basename "$agent_file")"
+                echo "    ~/.claude/agents/$agent_name -> shared/agents/$agent_name"
+            fi
+        done
+    fi
+    echo ""
+    echo "  CLAUDE.md: lab config injected between markers"
+    echo "    Edit freely outside the <!-- BEGIN/END: lab-config --> markers."
 fi
-if [[ -d "$SCRIPT_DIR/shared/hooks" ]]; then
-    for hook_file in "$SCRIPT_DIR/shared/hooks"/*; do
-        if [[ -f "$hook_file" ]]; then
-            hook_name="$(basename "$hook_file")"
-            echo "    ~/.claude/hooks/$hook_name -> shared/hooks/$hook_name"
-        fi
-    done
+
+if target_enabled codex; then
+    echo "  Codex symlinks created:"
+    if [[ "$SLURM_STATUS_GENERATED" == true ]]; then
+        echo "    ~/.codex/skills/slurm-status    -> build/skills/slurm-status"
+    fi
+    if [[ -d "$SCRIPT_DIR/shared/skills" ]]; then
+        for skill_dir in "$SCRIPT_DIR/shared/skills"/*/; do
+            if [[ -d "$skill_dir" ]]; then
+                skill_name="$(basename "$skill_dir")"
+                [[ -n "${CODEX_SKILL_OVERRIDES[$skill_name]:-}" ]] && continue
+                echo "    ~/.codex/skills/$skill_name -> shared/skills/$skill_name"
+            fi
+        done
+    fi
+    if [[ -d "$SCRIPT_DIR/shared/codex/skills" ]]; then
+        for skill_dir in "$SCRIPT_DIR/shared/codex/skills"/*/; do
+            if [[ -d "$skill_dir" ]]; then
+                skill_name="$(basename "$skill_dir")"
+                echo "    ~/.codex/skills/$skill_name -> shared/codex/skills/$skill_name"
+            fi
+        done
+    fi
+    if [[ -d "$SCRIPT_DIR/shared/agents" ]]; then
+        for agent_file in "$SCRIPT_DIR/shared/agents"/*.md; do
+            if [[ -f "$agent_file" ]]; then
+                agent_name="$(basename "$agent_file" .md)"
+                echo "    ~/.codex/skills/$agent_name -> build/codex/skills/$agent_name"
+            fi
+        done
+    fi
+    echo ""
+    echo "  AGENTS.md: lab config injected between markers"
+    echo "    Edit freely outside the <!-- BEGIN/END: lab-config --> markers."
 fi
-if [[ -d "$SCRIPT_DIR/shared/skills" ]]; then
-    for skill_dir in "$SCRIPT_DIR/shared/skills"/*/; do
-        if [[ -d "$skill_dir" ]]; then
-            skill_name="$(basename "$skill_dir")"
-            echo "    ~/.claude/skills/$skill_name -> shared/skills/$skill_name"
-        fi
-    done
-fi
-if [[ -d "$SCRIPT_DIR/shared/agents" ]]; then
-    for agent_file in "$SCRIPT_DIR/shared/agents"/*.md; do
-        if [[ -f "$agent_file" ]]; then
-            agent_name="$(basename "$agent_file")"
-            echo "    ~/.claude/agents/$agent_name -> shared/agents/$agent_name"
-        fi
-    done
-fi
-echo ""
-echo "  CLAUDE.md: lab config injected between markers"
-echo "    Edit freely outside the <!-- BEGIN/END: lab-config --> markers."
 echo ""
 echo "  To customize:"
-echo "    - Edit ~/.claude/settings.local.json for extra permissions, then re-run: ./setup.sh"
-echo "    - Edit ~/.claude/CLAUDE.md — your content outside the markers is preserved"
+if target_enabled claude; then
+    echo "    - Claude: edit ~/.claude/settings.local.json for extra permissions, then re-run: ./setup.sh"
+    echo "    - Claude: edit ~/.claude/CLAUDE.md - your content outside the markers is preserved"
+fi
+if target_enabled codex; then
+    echo "    - Codex: edit ~/.codex/AGENTS.md - your content outside the markers is preserved"
+fi
 echo "    - Re-run ./setup.sh after git pull to pick up shared changes"
 echo ""
