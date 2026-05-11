@@ -21,6 +21,7 @@ Ask Codex to use these skills by name:
 - `harvest` - discover completed experiments, collect results, and update documentation.
 - `onboard` - set up a lab member's Claude Code and/or Codex configuration.
 - `connect` - set up cross-cluster SSH between Great Lakes and Lighthouse.
+- `migrate` (experimental) - discover repo and compute assumptions, then plan migration to another lab's compute resources.
 - `slurm-queue` - show active, pending, and recent jobs.
 - `slurm-resource` - list accounts, partitions, and GPU types you can request.
 - `slurm-storage` - scan home directory usage and suggest what to move to turbo.

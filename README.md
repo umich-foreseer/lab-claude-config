@@ -59,6 +59,7 @@ Shared workflows include:
 - `submit-experiment` - submit documented Slurm experiments.
 - `harvest` - collect completed experiment results.
 - `connect` - set up cross-cluster SSH.
+- `migrate` (experimental) - discover repo and compute assumptions, then plan migration to another lab's compute resources.
 - `slurm-queue`, `slurm-resource`, `slurm-storage` - Claude agents converted into Codex skills where needed.
 
 Claude supports hooks/statusline directly. Codex does not, so login-node safety and tool usage rules are injected into `AGENTS.md` instead.
