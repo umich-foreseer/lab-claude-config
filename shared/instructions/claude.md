@@ -13,6 +13,7 @@ Skills are invoked with `/command`:
 - `/harvest` - discover completed experiments, collect results, and update documentation.
 - `/onboard` - set up a new lab member's Claude Code configuration.
 - `/connect` - set up cross-cluster SSH and establish the connection.
+- `/migrate` (experimental) - discover repo and compute assumptions, then plan migration to another lab's compute resources.
 
 Agents are invoked with `@agent-name` or used automatically by Claude when relevant:
 
