@@ -16,7 +16,7 @@ Default behavior: this skill changes **zero files**. It discovers, summarizes, a
 
 - Do not submit jobs, launch training, run inference, build large environments, or process large datasets.
 - On login nodes, run only lightweight discovery, file inspection, and edits.
-- Do not ask for, print, or store passwords, tokens, API keys, SSH private keys, or Duo credentials.
+- Do not ask for, print, or store passwords, tokens, API keys, SSH private keys, or MFA credentials.
 - Do not modify scheduler scripts, environment files, or docs until the user has reviewed the discovered facts and explicitly approves the exact files to change.
 - Preserve user-specific local files. Prefer repo docs/templates over machine-local dotfiles unless the user asks otherwise.
 
