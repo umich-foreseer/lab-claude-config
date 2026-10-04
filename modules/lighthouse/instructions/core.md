@@ -31,7 +31,7 @@ srun --partition={{LH_PARTITION}} --account={{LH_ACCOUNT}} --gres=gpu:1 --mem=80
 
 - Turbo (`/nfs/turbo/`) is shared with Great Lakes, so containers, datasets, and checkpoints are accessible from both clusters.
 - Home (`~/`) is also shared.
-- Lighthouse does not have scratch storage.
+- Scratch: `/scratch/{{LH_ACCOUNT}}_root/{{LH_ACCOUNT}}/${USER}/` (NFS, temporary, purged). Use it to stage tars for Data Den.
 
 ## Key Constraints
 
