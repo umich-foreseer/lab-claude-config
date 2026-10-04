@@ -20,6 +20,10 @@ This file is tool-agnostic lab guidance. Keep durable HPC, storage, Slurm, and c
 ### Data Den (archival storage)
 
 - Tape-backed archival storage for inactive datasets. Transfer via Globus; tar small files first.
+- Lab volume: `/si-qmei/` on the Globus collection "UMich ARC Non-Sensitive Data Den Volume Collection".
+- ARC asks for files of at least 100 MB (ideally 10-100 GB) and at most about 10,000 files per TB.
+- `module load archivetar` packs small files into zstd-compressed tars and uploads them with Globus. Run it inside a Slurm job.
+- Stage the temporary tars on scratch (`--bundle-dir /scratch/...`), not on turbo. Tars deleted from turbo stay in its daily snapshots for about 7 days and keep using the shared quota. Node-local disks such as `/tmp_data` do not work, because Globus cannot see them.
 - Details: https://its.umich.edu/advanced-research-computing/storage/data-den
 
 ### Scratch (high-performance temporary storage)
