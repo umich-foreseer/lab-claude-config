@@ -75,7 +75,7 @@ Based on the above data, report:
 - **Available L40S GPUs** (total free across all nodes)
 - **Remaining group memory budget** ({{GL_MEMORY_CAP}}G minus what's currently used)
 - **Estimated max GPUs requestable** given memory constraints (each L40S node has ~495 GB RAM, estimate ~60 GB per GPU as a reasonable default)
-- Any other partitions with free GPUs the user can access
+- Any other partitions with free GPUs the user can access (list A40 / `spgpu` last: it costs more per GPU-hour, so it is a last resort)
 - Note any heavy pending job queues that might compete for resources
 
 Present the final report as a clean markdown summary with sections.

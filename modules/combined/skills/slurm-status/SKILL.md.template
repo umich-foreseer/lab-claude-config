@@ -132,9 +132,9 @@ Combined table of all running and pending jobs across both clusters.
 |---------|-----------|-----|-----------|-------|
 | Great Lakes | spgpu2 (L40S) | L40S 48GB | _N_ free, _M_ GB group budget remaining | Priority access |
 | Great Lakes | gpu-rtx6000 | RTX 6000 96GB | _N_ free | Shared, may queue |
-| Great Lakes | spgpu (A40) | A40 48GB | _N_ free | Shared |
 | Lighthouse | {{LH_PARTITION}} | {{LH_GPU_TYPE}} | _N_ of {{LH_GPU_COUNT}} free | Requires `/connect` |
+| Great Lakes | spgpu (A40) | A40 48GB | _N_ free | Last resort: costs more per GPU-hour |
 
-Include a **recommendation**: which cluster/partition is best for submitting right now, considering availability, queue depth, and the user's priority access.
+Include a **recommendation**: which cluster/partition is best for submitting right now, considering availability, queue depth, and the user's priority access. Don't recommend A40 unless L40S and Lighthouse are both unavailable and the job can't wait.
 
 Present the final report as a clean markdown summary.

@@ -61,18 +61,19 @@ Only include GPU partitions (skip CPU-only partitions like `standard`, `debug`, 
 Show example `sbatch` and `srun` commands for each GPU type, using the user's actual account names. For example:
 
 ```bash
-# L40S (fastest, use owned account)
+# L40S (default: fastest and cheapest per GPU-hour, use owned account)
 sbatch --partition=spgpu2 --account=<actual_owned_account> --gres=gpu:1 --mem=60G --time=4:00:00 job.sh
-
-# A40
-sbatch --partition=spgpu --account=<actual_general_account> --gres=gpu:1 --mem=40G --time=4:00:00 job.sh
 
 # Interactive session on L40S
 srun --partition=spgpu2 --account=<actual_owned_account> --gres=gpu:1 --mem=60G --time=2:00:00 --pty bash
+
+# A40: last resort only, costs more per GPU-hour than L40S
+sbatch --partition=spgpu --account=<actual_general_account> --gres=gpu:1 --mem=40G --time=4:00:00 job.sh
 ```
 
 #### Tips
 
+- Recommend L40S or the Lighthouse A100s (`qmei-a100`) by default. List A40 last and say it costs more per GPU-hour; use it only when those are unavailable and the job can't wait.
 - Mention `/slurm-status` for checking real-time availability and current usage
 - Note the shared memory cap constraint if an owned account exists
 - Suggest reasonable default memory requests per GPU type (~60G for L40S, ~40G for A40, ~20G for V100)

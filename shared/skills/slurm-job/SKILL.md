@@ -25,7 +25,7 @@ Apply the same best practices described below when modifying.
 Ask the user concisely (combine into one question where possible):
 
 - **What does the job do?** (training run, inference, preprocessing, etc.)
-- **Which GPU type?** Default to L40S if they don't specify. Mention the options: L40S (fastest), A40, V100.
+- **Which GPU type?** Default to L40S if they don't specify. Mention the options: L40S (fastest and cheapest per GPU-hour), Lighthouse A100 (`qmei-a100`), V100. Don't offer A40 by default: it costs more per GPU-hour. Use it only when L40S and Lighthouse are unavailable and the job can't wait.
 - **How many GPUs?**
 - **Estimated wall time?** Suggest a reasonable default based on the task.
 - **Job name?**
@@ -91,9 +91,9 @@ echo "End: $(date)"
 | GPU | Partition | Mem/GPU | CPUs/GPU |
 |-----|-----------|---------|----------|
 | L40S | spgpu2 | 60G | 4 |
-| A40 | spgpu | 40G | 4 |
 | V100 | gpu | 20G | 4 |
 | A100 MIG | gpu_mig40 | 60G | 4 |
+| A40 (last resort) | spgpu | 40G | 4 |
 
 Scale memory and CPUs proportionally for multi-GPU jobs (e.g., 2 L40S → `--mem=120G --cpus-per-task=8`).
 
